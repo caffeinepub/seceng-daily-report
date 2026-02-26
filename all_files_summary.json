@@ -1,0 +1,17 @@
+{
+  "backend/main.mo": "Empty Motoko actor serving as the backend canister placeholder with no implemented methods.",
+  "feature_evidence.json": "Feature evidence report mapping implemented features (compact layout, combined datetime inputs, punch button) to their affected files, components, test IDs, and confidence levels.",
+  "frontend-file-summaries.txt": "JSON document containing one-line summaries of each frontend source file describing their purpose and key implementation details.",
+  "frontend/index.css": "Tailwind base CSS file defining CSS custom property tokens for light and dark themes covering colors, borders, and sidebar variables.",
+  "frontend/index.html": "HTML entry point that loads Inter and Oswald fonts from Google Fonts, includes jsPDF 2.5.1 via CDN, and mounts the React app at the root div.",
+  "frontend/src/App.tsx": "Root React component rendering a compact sticky header, hero banner with status indicator, main content area with ReportForm, and a footer with caffeine.ai attribution.",
+  "frontend/src/components/ReportForm.tsx": "Main report form component featuring a Check In/Check Out punch button that auto-captures ISO timestamps, displays duration, handles photo uploads, validates required fields, and triggers PDF generation.",
+  "frontend/src/hooks/useActor.ts": "React hook that creates and caches an ICP backend actor (anonymous or authenticated) using React Query, invalidating dependent queries when the identity changes.",
+  "frontend/src/hooks/useInternetIdentity.ts": "React hook and context provider managing Internet Identity authentication state, including login, logout, and persisting identity across page reloads via AuthClient.",
+  "frontend/src/hooks/useQueries.ts": "Empty placeholder module indicating no backend queries are needed since the app operates fully client-side.",
+  "frontend/src/index.css": "Global stylesheet that imports Tailwind directives, defines CSS custom properties for light/dark themes using oklch colors, and declares reusable component classes like form-section-card, styled-input, btn-primary, and btn-secondary.",
+  "frontend/src/main.tsx": "React app entry point that mounts the root component wrapped with QueryClientProvider and InternetIdentityProvider.",
+  "frontend/src/utils/pdfGenerator.ts": "Utility module that defines the ReportData interface and an async generateReportPDF function which uses the jsPDF CDN library to build and download a formatted A4 PDF report from submitted form data, including images and date formatting helpers.",
+  "frontend/tailwind.config.js": "Tailwind CSS configuration that sets up dark mode, custom fonts (Inter, Oswald), oklch-based semantic color tokens, border radius variables, custom box shadows, and accordion keyframe animations, with typography, container-queries, and animate plugins.",
+  "project_state.json": "Project state metadata file (version 17) tracking the app summary, existing feature list with requirement IDs, architectural notes, and known issues for the SECENG Daily Report application."
+}

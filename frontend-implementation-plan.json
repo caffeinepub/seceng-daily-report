@@ -1,0 +1,80 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Compact layout, combined date/time fields, and Check In/Out toggle button",
+  "requirements": [
+    {
+      "id": "REQ-19",
+      "summary": "Make the overall app layout compact by reducing vertical padding, margins, and gaps between form sections and fields",
+      "acceptanceCriteria": [
+        "Vertical padding and margins between form sections are visibly reduced compared to the previous version.",
+        "Section headings and dividers use minimal spacing.",
+        "The form fits more content in the viewport without sacrificing readability.",
+        "No layout overflow or broken alignment on desktop or mobile."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Reduce vertical padding and margins in the main layout container, hero banner section, and wrapper elements. Tighten spacing around the header, form container, and footer to maximize visible content area while maintaining clean alignment on desktop and mobile viewports."
+        },
+        {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Reduce vertical spacing throughout the form: decrease padding and margins on section containers, form field groups, section headings, dividers, and card elements. Apply tighter gaps between input fields and field labels. Ensure the Site Photos section and all other form sections use compact spacing while remaining readable and maintaining the black-and-white theme."
+        },
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Update global utility classes for cards, inputs, buttons, and typography to use reduced padding and margin values. Adjust spacing utilities to support the compact layout across all form components without breaking existing styles or theme consistency."
+        }
+      ]
+    },
+    {
+      "id": "REQ-20",
+      "summary": "Combine Check In and Check Out date and time inputs into single datetime-local controls on the same row",
+      "acceptanceCriteria": [
+        "Check In has a single combined date-and-time input control (or two controls on the same row).",
+        "Check Out has a single combined date-and-time input control (or two controls on the same row).",
+        "The combined datetime values are correctly passed to the PDF generator and appear formatted in the generated PDF.",
+        "The layout is consistent with the existing black-and-white theme."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Replace separate Check In date and time inputs with a single datetime-local input control, and replace separate Check Out date and time inputs with a single datetime-local input control. Store the combined datetime values in the form state and ensure both are styled consistently with the black-and-white theme. Update form field rendering to place each datetime-local control in its own row with appropriate labels."
+        },
+        {
+          "path": "frontend/src/utils/pdfGenerator.ts",
+          "operation": "modify",
+          "description": "Update the ReportData interface to accept combined datetime values for checkInDateTime and checkOutDateTime (replacing separate date and time fields). Modify the generateReportPDF function to format and display these combined datetime values correctly in the generated PDF report, ensuring proper date-time string parsing and formatting."
+        }
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "summary": "Replace datetime inputs with a single Check In/Check Out toggle button that records timestamps automatically",
+      "acceptanceCriteria": [
+        "A single button is displayed, initially labeled 'Check In'.",
+        "Pressing it records the current timestamp as Check In and the button label changes to 'Check Out'.",
+        "Pressing it a second time records the current timestamp as Check Out and the button is disabled or shows a completion state.",
+        "Recorded Check In and Check Out timestamps are displayed as read-only text next to or below the button.",
+        "Both timestamp values are included in the generated PDF report under their respective labels.",
+        "Button styling is consistent with the existing black-and-white theme."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Remove the datetime-local input controls added in REQ-20 and replace them with a single toggle button that starts with the label 'Check In'. Implement state management to track the button phase (initial, checked-in, checked-out). On first press, capture the current Date timestamp as Check In, change the button label to 'Check Out', and display the recorded Check In timestamp as read-only text. On second press, capture the current Date timestamp as Check Out, disable or visually mark the button as complete, and display the Check Out timestamp. Style the button and timestamp display consistently with the black-and-white theme."
+        },
+        {
+          "path": "frontend/src/utils/pdfGenerator.ts",
+          "operation": "modify",
+          "description": "Ensure the ReportData interface and generateReportPDF function accept the Check In and Check Out timestamp values captured by the toggle button in REQ-21. Format both timestamps appropriately in the generated PDF under their respective 'Check In' and 'Check Out' labels, handling Date objects or ISO strings as needed."
+        }
+      ]
+    }
+  ]
+}

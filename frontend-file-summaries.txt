@@ -1,0 +1,9 @@
+{
+  "frontend/index.html": "HTML entry point with Google Fonts (Inter + Oswald) preloaded and jsPDF 2.5.1 loaded via CDN script tag for client-side PDF generation.",
+  "frontend/src/index.css": "Global styles with compact component classes — reduced padding on form-section-card, styled-input, field-label, and button variants to support the tighter layout.",
+  "frontend/tailwind.config.js": "Tailwind config with Inter/Oswald fonts, black & white color tokens, and updated shadow utilities removing amber glow references.",
+  "frontend/src/utils/pdfGenerator.ts": "PDF generation utility updated to use checkInDateTime/checkOutDateTime ISO string fields (replacing separate date/time fields), with formatDateTime helper for display and extractDateOnly for the filename/report ID.",
+  "frontend/src/components/ReportForm.tsx": "Report form with a single Check In/Check Out punch button that auto-captures timestamps (ISO strings), displays them as read-only text, shows duration preview, and passes combined datetime values to the PDF generator; all sections use compact spacing.",
+  "frontend/src/App.tsx": "Root app component with compact sticky header, reduced hero banner, tighter main content padding, and compact footer with caffeine.ai attribution.",
+  "frontend/src/hooks/useQueries.ts": "Placeholder file confirming no backend queries are needed since the app is fully client-side."
+}

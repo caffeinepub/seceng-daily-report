@@ -1,0 +1,274 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 17,
+  "summary": "SECENG Daily Report app that accepts job/shift details and generates a downloadable PDF report. The app includes a header with the company name 'SECURITY ENGINEERING INC.' and a black-and-white theme. The logo has been removed from the header and PDF watermark.",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-create-a-report-form-that-accepts-the-following-inputs-check-in-date-time-check-out-date-time-close-out-report-multi-line-text-area-project-manager-name-location-contact-name-lead-technician-name-and-helper-name",
+      "title": "Create a report form that accepts the following inputs: Check In date & time, Check Out date & time, Close Out Report (multi-line text area), Project Manager name, Location Contact name, Lead Technician name, and Helper name.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-generate-pdf-button-that-compiles-all-entered-form-data-into-a-formatted-downloadable-pdf-report-branded-with-the-seceng-daily-report-title",
+      "title": "Add a 'Generate PDF' button that compiles all entered form data into a formatted, downloadable PDF report branded with the 'SECENG Daily Report' title.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-clean-professional-visual-theme-with-an-industrial-security-services-aesthetic-dark-navy-and-charcoal-tones-with-high-contrast-white-text-bold-typography-structured-card-based-layout-and-subtle-accent-color-amber-or-orange-for-key-actions-enforce-this-consistently-across-the-entire-ui",
+      "title": "Apply a clean, professional visual theme with an industrial/security-services aesthetic: dark navy and charcoal tones with high-contrast white text, bold typography, structured card-based layout, and subtle accent color (amber or orange) for key actions. Enforce this consistently across the entire UI.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-generate-the-security-engineering-inc-company-logo-shield-with-s-monogram-and-est-1975-text-as-a-static-image-asset-saved-to-frontend-public-assets-generated-seceng-logo-dim-300x300-png-and-a-grayscale-black-and-white-version-saved-as-frontend-public-assets-generated-seceng-logo-bw-dim-300x300-png-for-use-as-a-watermark",
+      "title": "Generate the Security Engineering Inc. company logo (shield with 'S' monogram and 'EST. 1975' text) as a static image asset saved to frontend/public/assets/generated/seceng-logo.dim_300x300.png, and a grayscale/black-and-white version saved as frontend/public/assets/generated/seceng-logo-bw.dim_300x300.png for use as a watermark.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-app-header-in-frontend-src-app-tsx-to-display-the-generated-security-engineering-inc-shield-logo-seceng-logo-png-alongside-the-bold-company-name-security-engineering-inc-the-logo-should-appear-to-the-left-of-the-text-both-vertically-centered-in-a-clean-professional-layout",
+      "title": "Update the app header in frontend/src/App.tsx to display the generated Security Engineering Inc. shield logo (seceng-logo.png) alongside the bold company name 'SECURITY ENGINEERING INC.' The logo should appear to the left of the text, both vertically centered, in a clean professional layout.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-retheme-the-entire-ui-in-frontend-src-index-css-and-frontend-src-app-tsx-to-use-a-strict-black-and-white-color-palette-replace-all-dark-navy-charcoal-and-amber-orange-accent-colors-with-shades-of-black-white-and-gray-the-primary-background-should-be-black-or-very-dark-gray-text-should-be-white-or-light-gray-and-key-action-elements-buttons-borders-accents-should-use-white-or-medium-gray-remove-all-amber-orange-accent-colors-throughout-the-ui",
+      "title": "Retheme the entire UI in frontend/src/index.css and frontend/src/App.tsx to use a strict black-and-white color palette. Replace all dark navy, charcoal, and amber/orange accent colors with shades of black, white, and gray. The primary background should be black or very dark gray, text should be white or light gray, and key action elements (buttons, borders, accents) should use white or medium gray. Remove all amber/orange accent colors throughout the UI.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-pdf-generation-utility-in-frontend-src-utils-pdfgenerator-ts-to-embed-the-grayscale-logo-image-seceng-logo-bw-png-as-a-centered-low-opacity-watermark-on-each-page-of-the-generated-pdf-report-the-watermark-should-be-large-approximately-150x150pt-positioned-in-the-center-of-the-page-and-rendered-at-roughly-15-20-opacity-so-it-does-not-obscure-report-content",
+      "title": "Update the PDF generation utility in frontend/src/utils/pdfGenerator.ts to embed the grayscale logo image (seceng-logo-bw.png) as a centered, low-opacity watermark on each page of the generated PDF report. The watermark should be large (approximately 150x150pt), positioned in the center of the page, and rendered at roughly 15–20% opacity so it does not obscure report content.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-security-engineering-inc-shield-logo-not-displaying-in-the-app-header-in-frontend-src-app-tsx-ensure-the-img-src-path-correctly-references-the-generated-logo-asset-at-assets-generated-seceng-logo-dim-300x300-png-served-from-frontend-public-add-an-onerror-fallback-so-the-header-degrades-gracefully-if-the-image-fails-to-load",
+      "title": "Fix the Security Engineering Inc. shield logo not displaying in the app header in frontend/src/App.tsx. Ensure the <img> src path correctly references the generated logo asset at /assets/generated/seceng-logo.dim_300x300.png (served from frontend/public). Add an onError fallback so the header degrades gracefully if the image fails to load.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-job-type-text-input-field-and-a-job-description-multi-line-textarea-field-to-the-report-form-in-frontend-src-components-reportform-tsx-both-fields-should-be-styled-consistently-with-the-existing-black-and-white-theme-both-fields-must-be-included-in-the-generated-pdf-report-output-via-frontend-src-utils-pdfgenerator-ts",
+      "title": "Add a 'Job Type' text input field and a 'Job Description' multi-line textarea field to the report form in frontend/src/components/ReportForm.tsx. Both fields should be styled consistently with the existing black-and-white theme. Both fields must be included in the generated PDF report output via frontend/src/utils/pdfGenerator.ts.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-completion-status-field-to-the-report-form-in-frontend-src-components-reportform-tsx-with-two-options-fully-complete-and-uncompleted-render-this-as-a-radio-button-group-or-a-styled-select-dropdown-consistent-with-the-black-and-white-theme-the-selected-value-must-be-included-in-the-generated-pdf-report-via-frontend-src-utils-pdfgenerator-ts",
+      "title": "Add a 'Completion Status' field to the report form in frontend/src/components/ReportForm.tsx with two options: 'Fully Complete' and 'Uncompleted'. Render this as a radio button group or a styled select dropdown, consistent with the black-and-white theme. The selected value must be included in the generated PDF report via frontend/src/utils/pdfGenerator.ts.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-previously-generated-shield-logo-assets-with-versions-accurately-recreated-from-the-uploaded-real-security-engineering-inc-logo-navy-blue-shield-outline-with-large-s-monogram-and-est-1975-text-on-white-background-save-the-color-version-as-frontend-public-assets-generated-seceng-logo-dim-300x300-png-and-a-grayscale-version-as-frontend-public-assets-generated-seceng-logo-bw-dim-300x300-png-update-frontend-src-app-tsx-to-reference-the-new-color-logo-in-the-header-and-update-frontend-src-utils-pdfgenerator-ts-to-use-the-new-grayscale-version-as-the-watermark",
+      "title": "Replace the previously generated shield logo assets with versions accurately recreated from the uploaded real Security Engineering Inc. logo (navy blue shield outline with large 'S' monogram and 'EST. 1975' text on white background). Save the color version as frontend/public/assets/generated/seceng-logo.dim_300x300.png and a grayscale version as frontend/public/assets/generated/seceng-logo-bw.dim_300x300.png. Update frontend/src/App.tsx to reference the new color logo in the header, and update frontend/src/utils/pdfGenerator.ts to use the new grayscale version as the watermark.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-polish-the-overall-ui-for-professionalism-and-usability-in-frontend-src-app-tsx-and-frontend-src-components-reportform-tsx-1-improve-the-header-layout-so-the-logo-and-security-engineering-inc-title-are-well-balanced-and-prominent-2-add-a-subtitle-or-tagline-such-as-daily-field-report-beneath-the-company-name-in-the-header-3-ensure-the-form-sections-use-clear-bold-section-headings-with-visible-dividers-4-add-placeholder-text-to-all-text-inputs-and-textareas-to-guide-users-5-improve-button-sizing-and-spacing-on-the-generate-pdf-button-for-clarity-6-add-a-small-footer-with-copyright-text-security-engineering-inc-2025",
+      "title": "Polish the overall UI for professionalism and usability in frontend/src/App.tsx and frontend/src/components/ReportForm.tsx: (1) improve the header layout so the logo and 'SECURITY ENGINEERING INC.' title are well-balanced and prominent; (2) add a subtitle or tagline such as 'Daily Field Report' beneath the company name in the header; (3) ensure the form sections use clear, bold section headings with visible dividers; (4) add placeholder text to all text inputs and textareas to guide users; (5) improve button sizing and spacing on the Generate PDF button for clarity; (6) add a small footer with copyright text 'Security Engineering Inc. © 2025'.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-pdf-output-in-frontend-src-utils-pdfgenerator-ts-to-include-a-professional-header-on-every-page-that-mirrors-the-app-branding-display-the-grayscale-logo-on-the-left-security-engineering-inc-in-bold-on-the-right-of-the-logo-and-daily-field-report-as-a-subtitle-below-the-company-name-add-a-horizontal-rule-beneath-the-header-ensure-the-report-title-all-form-field-labels-and-values-are-clearly-formatted-with-consistent-font-sizes-and-spacing",
+      "title": "Update the PDF output in frontend/src/utils/pdfGenerator.ts to include a professional header on every page that mirrors the app branding: display the grayscale logo on the left, 'SECURITY ENGINEERING INC.' in bold on the right of the logo, and 'Daily Field Report' as a subtitle below the company name. Add a horizontal rule beneath the header. Ensure the report title, all form field labels, and values are clearly formatted with consistent font sizes and spacing.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-company-logo-image-from-the-app-header-in-frontend-src-app-tsx-the-header-should-display-only-the-text-branding-security-engineering-inc-and-the-daily-field-report-subtitle-without-any-img-element-or-logo-placeholder",
+      "title": "Remove the company logo image from the app header in frontend/src/App.tsx. The header should display only the text branding ('SECURITY ENGINEERING INC.' and the 'Daily Field Report' subtitle) without any <img> element or logo placeholder.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-grayscale-logo-watermark-from-the-pdf-report-generated-by-frontend-src-utils-pdfgenerator-ts-the-pdf-pages-should-no-longer-include-any-logo-image-overlay-or-watermark",
+      "title": "Remove the grayscale logo watermark from the PDF report generated by frontend/src/utils/pdfGenerator.ts. The PDF pages should no longer include any logo image overlay or watermark.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-three-new-text-input-fields-to-the-report-form-in-frontend-src-components-reportform-tsx-job-code-customer-name-and-job-location-all-three-fields-should-be-styled-consistently-with-the-existing-black-and-white-theme-include-appropriate-placeholder-text-and-be-grouped-logically-with-the-existing-job-related-fields-job-type-job-description-the-reportdata-interface-in-frontend-src-utils-pdfgenerator-ts-must-be-updated-to-include-jobcode-customername-and-joblocation-properties-and-all-three-values-must-appear-as-clearly-labelled-fields-in-the-generated-pdf-report-output",
+      "title": "Add three new text input fields to the report form in frontend/src/components/ReportForm.tsx: 'Job Code', 'Customer Name', and 'Job Location'. All three fields should be styled consistently with the existing black-and-white theme, include appropriate placeholder text, and be grouped logically with the existing job-related fields (Job Type, Job Description). The ReportData interface in frontend/src/utils/pdfGenerator.ts must be updated to include jobCode, customerName, and jobLocation properties, and all three values must appear as clearly labelled fields in the generated PDF report output.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-two-image-upload-fields-to-the-report-form-in-frontend-src-components-reportform-tsx-before-picture-and-after-picture-each-field-should-render-a-file-input-accepting-image-files-with-a-preview-of-the-selected-image-displayed-below-the-input-both-fields-must-be-styled-consistently-with-the-existing-black-and-white-theme-with-clear-labels-and-placeholder-guidance-text-group-them-together-in-a-clearly-labelled-site-photos-section-with-a-visible-section-divider",
+      "title": "Add two image upload fields to the report form in frontend/src/components/ReportForm.tsx: 'Before Picture' and 'After Picture'. Each field should render a file input (accepting image files) with a preview of the selected image displayed below the input. Both fields must be styled consistently with the existing black-and-white theme, with clear labels and placeholder guidance text. Group them together in a clearly labelled 'Site Photos' section with a visible section divider.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-reportdata-interface-and-generatereportpdf-function-in-frontend-src-utils-pdfgenerator-ts-to-accept-and-embed-the-before-and-after-images-in-the-generated-pdf-report-add-a-site-photos-section-to-the-pdf-after-the-existing-report-fields-if-a-before-image-is-provided-render-it-with-a-before-label-if-an-after-image-is-provided-render-it-with-an-after-label-images-should-be-scaled-to-fit-within-the-page-width-while-preserving-aspect-ratio-if-only-one-image-is-provided-render-only-that-image-if-neither-is-provided-omit-the-section-entirely",
+      "title": "Update the ReportData interface and generateReportPDF function in frontend/src/utils/pdfGenerator.ts to accept and embed the Before and After images in the generated PDF report. Add a 'Site Photos' section to the PDF after the existing report fields. If a Before image is provided, render it with a 'Before' label; if an After image is provided, render it with an 'After' label. Images should be scaled to fit within the page width while preserving aspect ratio. If only one image is provided, render only that image. If neither is provided, omit the section entirely.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-the-overall-app-layout-compact-in-frontend-src-app-tsx-and-frontend-src-components-reportform-tsx-reduce-vertical-padding-margins-and-gaps-between-form-sections-and-fields-throughout-the-form-tighten-spacing-on-section-headings-dividers-and-card-containers-so-more-content-is-visible-without-scrolling-ensure-the-layout-remains-clean-and-readable-on-standard-desktop-and-mobile-viewports",
+      "title": "Make the overall app layout compact in frontend/src/App.tsx and frontend/src/components/ReportForm.tsx: reduce vertical padding, margins, and gaps between form sections and fields throughout the form. Tighten spacing on section headings, dividers, and card containers so more content is visible without scrolling. Ensure the layout remains clean and readable on standard desktop and mobile viewports.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-frontend-src-components-reportform-tsx-combine-the-check-in-date-and-time-inputs-into-a-single-row-side-by-side-and-combine-the-check-out-date-and-time-inputs-into-a-single-row-side-by-side-use-a-single-datetime-local-html-input-for-each-check-in-and-check-out-so-the-user-picks-both-date-and-time-in-one-control-or-render-the-date-and-time-pickers-inline-on-the-same-row-update-the-reportdata-interface-and-generatereportpdf-in-frontend-src-utils-pdfgenerator-ts-to-reflect-the-combined-datetime-values-for-check-in-and-check-out",
+      "title": "In frontend/src/components/ReportForm.tsx, combine the Check In date and time inputs into a single row (side by side) and combine the Check Out date and time inputs into a single row (side by side). Use a single datetime-local HTML input for each (Check In and Check Out) so the user picks both date and time in one control, or render the date and time pickers inline on the same row. Update the ReportData interface and generateReportPDF in frontend/src/utils/pdfGenerator.ts to reflect the combined datetime values for Check In and Check Out.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-separate-check-in-and-check-out-datetime-inputs-in-frontend-src-components-reportform-tsx-with-a-single-toggle-button-labeled-check-in-when-the-user-presses-it-for-the-first-time-it-records-the-current-date-and-time-as-the-check-in-timestamp-and-the-button-label-changes-to-check-out-when-the-user-presses-the-same-button-a-second-time-it-records-the-current-date-and-time-as-the-check-out-timestamp-and-the-button-becomes-inactive-or-resets-with-a-visual-confirmation-display-the-recorded-check-in-and-check-out-timestamps-as-read-only-text-near-the-button-both-timestamps-must-be-passed-through-to-the-reportdata-interface-and-appear-in-the-generated-pdf-report-via-frontend-src-utils-pdfgenerator-ts",
+      "title": "Replace the separate Check In and Check Out datetime inputs in frontend/src/components/ReportForm.tsx with a single toggle button labeled 'Check In'. When the user presses it for the first time, it records the current date and time as the Check In timestamp and the button label changes to 'Check Out'. When the user presses the same button a second time, it records the current date and time as the Check Out timestamp and the button becomes inactive (or resets with a visual confirmation). Display the recorded Check In and Check Out timestamps as read-only text near the button. Both timestamps must be passed through to the ReportData interface and appear in the generated PDF report via frontend/src/utils/pdfGenerator.ts.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Accept Check In and Check Out date and time inputs",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Accept Close Out Report text/field",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Accept Project Manager, Location Contact, Lead Technician, and Helper names",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Generate and download a PDF report from the entered data",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Add company logo and 'SECURITY ENGINEERING INC.' name to the header",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Change theme to shades of black and white",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Add logo as a watermark on the PDF report",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Add 'Job Type' and 'Job Description' fields to the report form",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Add 'Fully Complete' and 'Uncompleted' options (e.g., radio/select) to the report form",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Polish overall UI for professionalism and usability: ensure logo displays correctly in header, add any missing branding/layout details, improve form presentation and user experience",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Remove the company logo from the app header and PDF watermark",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Add 'Job Code', 'Customer Name', and 'Job Location' fields to the report form and PDF output",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Allow user to upload Before and After pictures in the report form, included in the PDF output",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Make app layout compact: combine date and time fields, manage spacing throughout",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Add a single toggle button that records Check In time on first press and Check Out time on second press",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "SECENG Daily Report",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

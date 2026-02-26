@@ -1,0 +1,83 @@
+{
+  "kind": "build_request",
+  "title": "Compact layout, combined date/time fields, and Check In/Out toggle button",
+  "projectName": "SECENG Daily Report",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-19",
+      "text": "Make the overall app layout compact in frontend/src/App.tsx and frontend/src/components/ReportForm.tsx: reduce vertical padding, margins, and gaps between form sections and fields throughout the form. Tighten spacing on section headings, dividers, and card containers so more content is visible without scrolling. Ensure the layout remains clean and readable on standard desktop and mobile viewports.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Make app compact.",
+          "manage spaces"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Vertical padding and margins between form sections are visibly reduced compared to the previous version.",
+        "Section headings and dividers use minimal spacing.",
+        "The form fits more content in the viewport without sacrificing readability.",
+        "No layout overflow or broken alignment on desktop or mobile."
+      ]
+    },
+    {
+      "id": "REQ-20",
+      "text": "In frontend/src/components/ReportForm.tsx, combine the Check In date and time inputs into a single row (side by side) and combine the Check Out date and time inputs into a single row (side by side). Use a single datetime-local HTML input for each (Check In and Check Out) so the user picks both date and time in one control, or render the date and time pickers inline on the same row. Update the ReportData interface and generateReportPDF in frontend/src/utils/pdfGenerator.ts to reflect the combined datetime values for Check In and Check Out.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Put date and time together"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Check In has a single combined date-and-time input control (or two controls on the same row).",
+        "Check Out has a single combined date-and-time input control (or two controls on the same row).",
+        "The combined datetime values are correctly passed to the PDF generator and appear formatted in the generated PDF.",
+        "The layout is consistent with the existing black-and-white theme."
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "text": "Replace the separate Check In and Check Out datetime inputs in frontend/src/components/ReportForm.tsx with a single toggle button labeled 'Check In'. When the user presses it for the first time, it records the current date and time as the Check In timestamp and the button label changes to 'Check Out'. When the user presses the same button a second time, it records the current date and time as the Check Out timestamp and the button becomes inactive (or resets with a visual confirmation). Display the recorded Check In and Check Out timestamps as read-only text near the button. Both timestamps must be passed through to the ReportData interface and appear in the generated PDF report via frontend/src/utils/pdfGenerator.ts.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Punch a button to check it to job and punch same button to checkout"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A single button is displayed, initially labeled 'Check In'.",
+        "Pressing it records the current timestamp as Check In and the button label changes to 'Check Out'.",
+        "Pressing it a second time records the current timestamp as Check Out and the button is disabled or shows a completion state.",
+        "Recorded Check In and Check Out timestamps are displayed as read-only text next to or below the button.",
+        "Both timestamp values are included in the generated PDF report under their respective labels.",
+        "Button styling is consistent with the existing black-and-white theme."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify any files under frontend/src/hooks/ or frontend/src/components/ui.",
+    "Maintain the existing strict black-and-white color theme throughout all changes.",
+    "Do not remove or break any existing form fields other than replacing the Check In / Check Out date-time inputs as specified."
+  ],
+  "nonGoals": [
+    "Adding any new form fields beyond what is specified.",
+    "Changing the PDF branding, header structure, or watermark behavior.",
+    "Backend changes — the app remains fully client-side.",
+    "Redesigning the overall visual theme or color palette."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}
