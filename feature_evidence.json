@@ -2,8 +2,27 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-frontend-src-components-reportform-tsx-rename-all-visible-labels-placeholders-and-aria-labels-that-currently-read-assis-tech-or-assis-tech-to-assis-technician-or-assis-technician-respectively-the-input-field-for-this-personnel-entry-and-its-section-heading-must-display-assis-technician",
-      "featureTitle": "In frontend/src/components/ReportForm.tsx, rename all visible labels, placeholders, and aria labels that currently read 'Assis Tech' or 'ASSIS TECH' to 'Assis Technician' or 'ASSIS TECHNICIAN' respectively. The input field for this personnel entry and its section heading must display 'Assis Technician'.",
+      "featureId": "feature-remove-the-technician-signature-field-entirely-from-the-report-form-reportform-tsx-remove-its-ui-input-any-associated-state-and-all-references-to-it-in-the-pdf-generation-logic-pdfgenerator-ts",
+      "featureTitle": "Remove the 'Technician Signature' field entirely from the report form (ReportForm.tsx) — remove its UI input, any associated state, and all references to it in the PDF generation logic (pdfGenerator.ts).",
+      "files": [
+        "frontend/src/components/ReportForm.tsx",
+        "frontend/src/utils/pdfGenerator.ts"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-replace-the-single-photo-upload-input-in-reportform-tsx-with-a-multi-photo-upload-control-that-allows-the-user-to-select-and-add-multiple-images-each-uploaded-photo-should-be-stored-as-an-individual-entry-in-state",
+      "featureTitle": "Replace the single photo upload input in ReportForm.tsx with a multi-photo upload control that allows the user to select and add multiple images. Each uploaded photo should be stored as an individual entry in state.",
       "files": [
         "frontend/src/components/ReportForm.tsx"
       ],
@@ -15,14 +34,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-51"
+        "REQ-2"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-frontend-src-utils-pdfgenerator-ts-update-the-generatereportpdf-function-to-display-the-label-assis-technician-instead-of-assis-tech-in-the-pdf-output-for-the-assisttech-field-the-reportdata-interface-property-name-assisttech-remains-unchanged",
-      "featureTitle": "In frontend/src/utils/pdfGenerator.ts, update the generateReportPDF function to display the label 'Assis Technician:' (instead of 'Assis Tech:') in the PDF output for the assistTech field. The ReportData interface property name 'assistTech' remains unchanged.",
+      "featureId": "feature-for-each-uploaded-photo-in-the-multi-photo-list-provide-a-text-input-field-so-the-user-can-enter-a-description-or-label-for-that-specific-photo-store-the-label-alongside-the-photo-in-state-and-include-both-the-image-and-its-label-in-the-generated-pdf-report",
+      "featureTitle": "For each uploaded photo in the multi-photo list, provide a text input field so the user can enter a description or label for that specific photo. Store the label alongside the photo in state and include both the image and its label in the generated PDF report.",
       "files": [
+        "frontend/src/components/ReportForm.tsx",
         "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
@@ -33,14 +53,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-52"
+        "REQ-3"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-pdf-layout-in-frontend-src-utils-pdfgenerator-ts-to-visually-mirror-the-app-s-industrial-dark-theme-aesthetic-in-terms-of-layout-typography-and-spacing-without-changing-the-existing-color-values-specifically-use-bold-wide-tracked-uppercase-typography-for-section-headings-matching-the-app-s-oswald-bold-heading-style-increase-whitespace-and-padding-around-section-blocks-to-match-the-app-s-card-based-section-layout-render-field-label-value-pairs-in-a-structured-two-column-or-clearly-separated-format-with-consistent-line-spacing-apply-visible-horizontal-divider-lines-between-sections-to-mirror-the-app-s-section-dividers-ensure-the-pdf-header-block-security-engineering-inc-daily-field-report-uses-bold-large-type-for-the-company-name-and-a-smaller-subtitle-line-matching-the-app-header-hierarchy-do-not-alter-any-color-values-currently-used-in-the-pdf",
-      "featureTitle": "Update the PDF layout in frontend/src/utils/pdfGenerator.ts to visually mirror the app's industrial dark-theme aesthetic in terms of layout, typography, and spacing — without changing the existing color values. Specifically: use bold, wide-tracked uppercase typography for section headings (matching the app's Oswald/bold heading style); increase whitespace and padding around section blocks to match the app's card-based section layout; render field label-value pairs in a structured two-column or clearly separated format with consistent line spacing; apply visible horizontal divider lines between sections to mirror the app's section dividers; ensure the PDF header block ('SECURITY ENGINEERING INC.' / 'Daily Field Report') uses bold large type for the company name and a smaller subtitle line, matching the app header hierarchy. Do not alter any color values currently used in the PDF.",
+      "featureId": "feature-find-all-occurrences-of-the-label-helper-in-the-form-ui-reportform-tsx-and-the-pdf-generator-pdfgenerator-ts-and-replace-them-with-assis-technician",
+      "featureTitle": "Find all occurrences of the label 'HELPER' in the form UI (ReportForm.tsx) and the PDF generator (pdfGenerator.ts) and replace them with 'ASSIS TECHNICIAN'.",
       "files": [
+        "frontend/src/components/ReportForm.tsx",
         "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
@@ -51,7 +72,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-53"
+        "REQ-4"
       ],
       "confidence": "high"
     }

@@ -2,6 +2,12 @@ import { useState, useRef } from 'react';
 import { generateReportPDF, ReportData } from '../utils/pdfGenerator';
 import { Clock, FileText, User, MapPin, Briefcase, CheckCircle, Camera, Download, X, ImagePlus } from 'lucide-react';
 
+interface PhotoEntry {
+  file: File;
+  previewUrl: string;
+  label: string;
+}
+
 interface FormState {
   jobCode: string;
   customerName: string;
@@ -59,9 +65,8 @@ export default function ReportForm() {
   const [checkInDT, setCheckInDT] = useState<string>('');
   const [checkOutDT, setCheckOutDT] = useState<string>('');
 
-  // Multi-photo state
-  const [sitePhotos, setSitePhotos] = useState<File[]>([]);
-  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  // Multi-photo state with labels
+  const [photos, setPhotos] = useState<PhotoEntry[]>([]);
 
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -88,32 +93,42 @@ export default function ReportForm() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const newUrls = files.map(f => URL.createObjectURL(f));
-    setSitePhotos(prev => [...prev, ...files]);
-    setPhotoPreviewUrls(prev => [...prev, ...newUrls]);
+    const newEntries: PhotoEntry[] = files.map(f => ({
+      file: f,
+      previewUrl: URL.createObjectURL(f),
+      label: '',
+    }));
+
+    setPhotos(prev => [...prev, ...newEntries]);
 
     // Reset input so same files can be re-added if needed
     if (photoInputRef.current) photoInputRef.current.value = '';
   };
 
   const removePhoto = (index: number) => {
-    URL.revokeObjectURL(photoPreviewUrls[index]);
-    setSitePhotos(prev => prev.filter((_, i) => i !== index));
-    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    URL.revokeObjectURL(photos[index].previewUrl);
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updatePhotoLabel = (index: number, label: string) => {
+    setPhotos(prev => prev.map((p, i) => i === index ? { ...p, label } : p));
   };
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
     try {
       // Convert all photos to base64
-      const base64Photos = await Promise.all(
-        sitePhotos.map(
-          file =>
-            new Promise<string>((resolve, reject) => {
+      const photoData = await Promise.all(
+        photos.map(
+          entry =>
+            new Promise<{ data: string; label: string }>((resolve, reject) => {
               const reader = new FileReader();
-              reader.onload = ev => resolve(ev.target?.result as string);
+              reader.onload = ev => resolve({
+                data: ev.target?.result as string,
+                label: entry.label,
+              });
               reader.onerror = reject;
-              reader.readAsDataURL(file);
+              reader.readAsDataURL(entry.file);
             })
         )
       );
@@ -122,7 +137,7 @@ export default function ReportForm() {
         checkIn: toDisplayTime(checkInDT),
         checkOut: toDisplayTime(checkOutDT),
         ...form,
-        sitePhotos: base64Photos.length > 0 ? base64Photos : undefined,
+        sitePhotos: photoData.length > 0 ? photoData : undefined,
       };
       generateReportPDF(reportData);
     } catch (err) {
@@ -394,33 +409,49 @@ export default function ReportForm() {
           onChange={handlePhotoUpload}
         />
 
-        {/* Photo grid previews */}
-        {photoPreviewUrls.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {photoPreviewUrls.map((url, index) => (
-              <div key={index} className="relative group rounded-lg overflow-hidden border border-border aspect-square">
-                <img
-                  src={url}
-                  alt={`Site photo ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  onClick={() => removePhoto(index)}
-                  className="absolute top-1 right-1 bg-black/70 hover:bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label="Remove photo"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-xs text-white text-center py-0.5">
-                  Photo {index + 1}
+        {/* Photo list with label inputs */}
+        {photos.length > 0 && (
+          <div className="flex flex-col gap-4">
+            {photos.map((entry, index) => (
+              <div key={index} className="flex gap-3 bg-input border border-border rounded-lg p-3">
+                {/* Thumbnail */}
+                <div className="relative flex-shrink-0 w-24 h-24 rounded overflow-hidden border border-border">
+                  <img
+                    src={entry.previewUrl}
+                    alt={`Site photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-1 right-1 bg-black/70 hover:bg-destructive text-white rounded-full p-0.5 transition-colors"
+                    aria-label="Remove photo"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* Label input */}
+                <div className="flex flex-col flex-1 justify-center gap-1">
+                  <label className={labelClass}>
+                    Photo {index + 1} — Description / Label
+                  </label>
+                  <input
+                    type="text"
+                    value={entry.label}
+                    onChange={(e) => updatePhotoLabel(index, e.target.value)}
+                    placeholder="e.g. Panel installation, Cable routing..."
+                    className={inputClass}
+                  />
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {photoPreviewUrls.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-2">{photoPreviewUrls.length} photo{photoPreviewUrls.length !== 1 ? 's' : ''} selected</p>
+        {photos.length > 0 && (
+          <p className="text-xs text-muted-foreground mt-3">
+            {photos.length} photo{photos.length !== 1 ? 's' : ''} selected
+          </p>
         )}
       </div>
 

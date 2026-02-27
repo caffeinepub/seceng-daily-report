@@ -1,78 +1,89 @@
 {
   "kind": "build_request",
-  "title": "Rename 'Assis Tech' to 'Assis Technician' and update PDF layout to mirror app theme",
+  "title": "Remove Technician Signature, Multi-Photo Upload with Labels, Rename Helper Role",
   "projectName": "SECENG Daily Report",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-51",
-      "text": "In frontend/src/components/ReportForm.tsx, rename all visible labels, placeholders, and aria labels that currently read 'Assis Tech' or 'ASSIS TECH' to 'Assis Technician' or 'ASSIS TECHNICIAN' respectively. The input field for this personnel entry and its section heading must display 'Assis Technician'.",
+      "id": "REQ-1",
+      "text": "Remove the 'Technician Signature' field entirely from the report form (ReportForm.tsx) — remove its UI input, any associated state, and all references to it in the PDF generation logic (pdfGenerator.ts).",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "'ASSIS TECH' to 'ASSIS TECHNICIAN'"
+          "Remove 'Technician Signature'."
         ]
       },
       "acceptanceCriteria": [
-        "The personnel input field label reads 'Assis Technician' (not 'Assis Tech' or 'Helper')",
-        "The placeholder text for that input reads 'Assis Technician' or similar",
-        "Any section heading that previously displayed 'ASSIS TECH' now displays 'ASSIS TECHNICIAN'",
-        "No remaining instances of 'Assis Tech' or 'ASSIS TECH' appear in the form UI"
+        "The 'Technician Signature' field no longer appears in the report form UI.",
+        "No signature section appears in the generated PDF.",
+        "No residual state variables or handlers for the signature field remain in the codebase."
       ]
     },
     {
-      "id": "REQ-52",
-      "text": "In frontend/src/utils/pdfGenerator.ts, update the generateReportPDF function to display the label 'Assis Technician:' (instead of 'Assis Tech:') in the PDF output for the assistTech field. The ReportData interface property name 'assistTech' remains unchanged.",
+      "id": "REQ-2",
+      "text": "Replace the single photo upload input in ReportForm.tsx with a multi-photo upload control that allows the user to select and add multiple images. Each uploaded photo should be stored as an individual entry in state.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "'ASSIS TECH' to 'ASSIS TECHNICIAN'"
+          "Let user upload multiple pictures."
         ]
       },
       "acceptanceCriteria": [
-        "The generated PDF report displays 'Assis Technician:' as the label for this field",
-        "No instance of 'Assis Tech:' or 'Helper:' appears in the PDF output",
-        "The ReportData interface 'assistTech' property name is unchanged"
+        "The user can select and upload more than one photo.",
+        "Each uploaded photo is stored and displayed individually.",
+        "Previously uploaded photos remain when a new one is added."
       ]
     },
     {
-      "id": "REQ-53",
-      "text": "Update the PDF layout in frontend/src/utils/pdfGenerator.ts to visually mirror the app's industrial dark-theme aesthetic in terms of layout, typography, and spacing — without changing the existing color values. Specifically: use bold, wide-tracked uppercase typography for section headings (matching the app's Oswald/bold heading style); increase whitespace and padding around section blocks to match the app's card-based section layout; render field label-value pairs in a structured two-column or clearly separated format with consistent line spacing; apply visible horizontal divider lines between sections to mirror the app's section dividers; ensure the PDF header block ('SECURITY ENGINEERING INC.' / 'Daily Field Report') uses bold large type for the company name and a smaller subtitle line, matching the app header hierarchy. Do not alter any color values currently used in the PDF.",
+      "id": "REQ-3",
+      "text": "For each uploaded photo in the multi-photo list, provide a text input field so the user can enter a description or label for that specific photo. Store the label alongside the photo in state and include both the image and its label in the generated PDF report.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Make PDF display theme similar to app replay theme without color change."
+          "Add discription or label to each picture."
         ]
       },
       "acceptanceCriteria": [
-        "PDF section headings use bold, uppercase, wider-tracked typography consistent with the app's heading style",
-        "Horizontal divider lines appear between PDF sections, mirroring the app's card/section dividers",
-        "Field label-value pairs are consistently spaced and clearly separated throughout the PDF",
-        "The PDF header displays 'SECURITY ENGINEERING INC.' in large bold type and 'Daily Field Report' as a smaller subtitle",
-        "Padding/margins around sections in the PDF reflect the structured card-like layout of the app",
-        "No color values in the PDF output are changed from their current state"
+        "Each photo in the upload list has its own text input for a description or label.",
+        "The label is visually associated with its corresponding photo in the form UI.",
+        "The generated PDF displays each photo with its label rendered beneath or beside it."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Find all occurrences of the label 'HELPER' in the form UI (ReportForm.tsx) and the PDF generator (pdfGenerator.ts) and replace them with 'ASSIS TECHNICIAN'.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Replace 'HELPER' with 'ASSIS TECHNICIAN'."
+        ]
+      },
+      "acceptanceCriteria": [
+        "The label 'HELPER' no longer appears anywhere in the form UI or generated PDF.",
+        "The label 'ASSIS TECHNICIAN' appears in every place 'HELPER' previously appeared."
       ]
     }
   ],
   "constraints": [
-    "Do not change any color values in the PDF output",
-    "Do not rename the 'assistTech' property in the ReportData interface",
-    "Do not modify files listed in frontend.immutablePaths"
+    "Do not alter any immutable frontend paths (useInternetIdentity.ts, useActor.ts, main.tsx, components/ui).",
+    "All changes are frontend-only; do not modify backend/main.mo."
   ],
   "nonGoals": [
-    "Changing PDF background or text colors",
-    "Modifying the app UI color theme",
-    "Adding new form fields or PDF sections",
-    "Changing any other field labels besides 'Assis Tech' → 'Assis Technician'"
+    "Adding backend storage or persistence for uploaded photos.",
+    "Changing any other field labels or form sections not mentioned in this request.",
+    "Redesigning the overall visual theme or layout of the app."
   ],
   "imageRequirements": {
     "required": [],

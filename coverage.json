@@ -1,18 +1,31 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T01:21:43.484Z",
+  "generatedAt": "2026-02-27T12:55:47.535Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-51",
-        "summary": "In frontend/src/components/ReportForm.tsx, rename all visible labels, placeholders, and aria labels that currently read 'Assis Tech' or 'ASSIS TECH' to 'Assis Technician' or 'ASSIS TECHNICIAN' respectively. The input field for this personnel entry and its section heading must display 'Assis Technician'.",
+        "id": "REQ-1",
+        "summary": "Remove the 'Technician Signature' field entirely from the report form (ReportForm.tsx) — remove its UI input, any associated state, and all references to it in the PDF generation logic (pdfGenerator.ts).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/ReportForm.tsx",
+          "frontend/src/utils/pdfGenerator.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/ReportForm.tsx",
+          "frontend/src/utils/pdfGenerator.ts"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Replace the single photo upload input in ReportForm.tsx with a multi-photo upload control that allows the user to select and add multiple images. Each uploaded photo should be stored as an individual entry in state.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/ReportForm.tsx"
@@ -22,24 +35,28 @@
         ]
       },
       {
-        "id": "REQ-52",
-        "summary": "In frontend/src/utils/pdfGenerator.ts, update the generateReportPDF function to display the label 'Assis Technician:' (instead of 'Assis Tech:') in the PDF output for the assistTech field. The ReportData interface property name 'assistTech' remains unchanged.",
+        "id": "REQ-3",
+        "summary": "For each uploaded photo in the multi-photo list, provide a text input field so the user can enter a description or label for that specific photo. Store the label alongside the photo in state and include both the image and its label in the generated PDF report.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/components/ReportForm.tsx",
           "frontend/src/utils/pdfGenerator.ts"
         ],
         "matchedFiles": [
+          "frontend/src/components/ReportForm.tsx",
           "frontend/src/utils/pdfGenerator.ts"
         ]
       },
       {
-        "id": "REQ-53",
-        "summary": "Update the PDF layout in frontend/src/utils/pdfGenerator.ts to visually mirror the app's industrial dark-theme aesthetic in terms of layout, typography, and spacing — without changing the existing color values. Specifically: use bold, wide-tracked uppercase typography for section headings (matching the app's Oswald/bold heading style); increase whitespace and padding around section blocks to match the app's card-based section layout; render field label-value pairs in a structured two-column or clearly separated format with consistent line spacing; apply visible horizontal divider lines between sections to mirror the app's section dividers; ensure the PDF header block ('SECURITY ENGINEERING INC.' / 'Daily Field Report') uses bold large type for the company name and a smaller subtitle line, matching the app header hierarchy. Do not alter any color values currently used in the PDF.",
+        "id": "REQ-4",
+        "summary": "Find all occurrences of the label 'HELPER' in the form UI (ReportForm.tsx) and the PDF generator (pdfGenerator.ts) and replace them with 'ASSIS TECHNICIAN'.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/components/ReportForm.tsx",
           "frontend/src/utils/pdfGenerator.ts"
         ],
         "matchedFiles": [
+          "frontend/src/components/ReportForm.tsx",
           "frontend/src/utils/pdfGenerator.ts"
         ]
       }

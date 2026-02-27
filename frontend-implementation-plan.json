@@ -1,57 +1,83 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Rename 'Assis Tech' to 'Assis Technician' and update PDF layout to mirror app theme",
+  "title": "Remove Technician Signature, Multi-Photo Upload with Labels, Rename Helper Role",
   "requirements": [
     {
-      "id": "REQ-51",
-      "summary": "Update all visible labels in ReportForm.tsx to display 'Assis Technician' instead of 'Assis Tech'",
+      "id": "REQ-1",
+      "summary": "Remove the 'Technician Signature' field entirely from the report form and PDF generation logic",
       "acceptanceCriteria": [
-        "The personnel input field label reads 'Assis Technician' (not 'Assis Tech' or 'Helper')",
-        "The placeholder text for that input reads 'Assis Technician' or similar",
-        "Any section heading that previously displayed 'ASSIS TECH' now displays 'ASSIS TECHNICIAN'",
-        "No remaining instances of 'Assis Tech' or 'ASSIS TECH' appear in the form UI"
+        "The 'Technician Signature' field no longer appears in the report form UI.",
+        "No signature section appears in the generated PDF.",
+        "No residual state variables or handlers for the signature field remain in the codebase."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/ReportForm.tsx",
           "operation": "modify",
-          "description": "Replace all visible text content that currently displays 'Assis Tech' or 'ASSIS TECH' with 'Assis Technician' or 'ASSIS TECHNICIAN' respectively. Update labels, placeholders, and aria-labels for the assistTech input field and its section heading. The ReportData interface property name 'assistTech' remains unchanged; only UI-visible text is updated."
+          "description": "Remove the technician signature input field from the form UI, including its state variable, onChange handler, and any associated JSX elements. Ensure no references to the signature field remain in the component."
+        },
+        {
+          "path": "frontend/src/utils/pdfGenerator.ts",
+          "operation": "modify",
+          "description": "Remove all references to the technician signature field from the PDF generation logic, including any signature rendering sections, layout calculations, or data processing related to the signature."
         }
       ]
     },
     {
-      "id": "REQ-52",
-      "summary": "Update PDF output to display 'Assis Technician:' label instead of 'Assis Tech:'",
+      "id": "REQ-2",
+      "summary": "Replace single photo upload with multi-photo upload control allowing multiple image selection",
       "acceptanceCriteria": [
-        "The generated PDF report displays 'Assis Technician:' as the label for this field",
-        "No instance of 'Assis Tech:' or 'Helper:' appears in the PDF output",
-        "The ReportData interface 'assistTech' property name is unchanged"
+        "The user can select and upload more than one photo.",
+        "Each uploaded photo is stored and displayed individually.",
+        "Previously uploaded photos remain when a new one is added."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/pdfGenerator.ts",
+          "path": "frontend/src/components/ReportForm.tsx",
           "operation": "modify",
-          "description": "In the generateReportPDF function, locate where the assistTech field label is rendered in the PDF and change the display text from 'Assis Tech:' to 'Assis Technician:'. Do not modify the ReportData interface property name or any property references in code."
+          "description": "Replace the single photo upload input with a multi-photo upload control. Change the photo state from a single value to an array that can hold multiple images. Update the file input to accept multiple files and add a handler that appends new photos to the existing array. Display all uploaded photos in a list or grid with individual previews."
         }
       ]
     },
     {
-      "id": "REQ-53",
-      "summary": "Update PDF layout to mirror the app's industrial dark-theme aesthetic in typography, spacing, and structure without changing colors",
+      "id": "REQ-3",
+      "summary": "Add description/label text input for each uploaded photo, storing labels with photos and including them in PDF",
       "acceptanceCriteria": [
-        "PDF section headings use bold, uppercase, wider-tracked typography consistent with the app's heading style",
-        "Horizontal divider lines appear between PDF sections, mirroring the app's card/section dividers",
-        "Field label-value pairs are consistently spaced and clearly separated throughout the PDF",
-        "The PDF header displays 'SECURITY ENGINEERING INC.' in large bold type and 'Daily Field Report' as a smaller subtitle",
-        "Padding/margins around sections in the PDF reflect the structured card-like layout of the app",
-        "No color values in the PDF output are changed from their current state"
+        "Each photo in the upload list has its own text input for a description or label.",
+        "The label is visually associated with its corresponding photo in the form UI.",
+        "The generated PDF displays each photo with its label rendered beneath or beside it."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Update the photo state structure to store both the image data and an associated label for each photo (e.g., as an array of objects with image and label properties). Add a text input field next to each photo preview that allows the user to enter or edit the label for that specific photo. Wire up onChange handlers to update the label in state when the user types."
+        },
+        {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Refactor the PDF layout in generateReportPDF to mirror the app's industrial aesthetic: (1) Update section headings to use bold, uppercase, wide letter-spacing (tracking) typography matching Oswald/bold heading style from the app; (2) Add horizontal divider lines between major sections to match the app's section dividers; (3) Restructure field label-value pairs into a consistent two-column or clearly separated format with uniform line spacing; (4) Increase whitespace and padding around section blocks to mirror the app's card-based layout; (5) Ensure the PDF header displays 'SECURITY ENGINEERING INC.' in large bold type with 'Daily Field Report' as a smaller subtitle below, matching the app header hierarchy. Do not alter any existing color values in the PDF output."
+          "description": "Update the PDF generation logic to accept and render multiple photos with their labels. For each photo in the array, display the image and render its associated label text beneath or beside it in the PDF layout. Adjust spacing and page breaks as needed to accommodate multiple labeled photos."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Replace all occurrences of 'HELPER' label with 'ASSIS TECHNICIAN' in form UI and PDF",
+      "acceptanceCriteria": [
+        "The label 'HELPER' no longer appears anywhere in the form UI or generated PDF.",
+        "The label 'ASSIS TECHNICIAN' appears in every place 'HELPER' previously appeared."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Find and replace all string literals and labels containing 'HELPER' with 'ASSIS TECHNICIAN' in the form UI, including field labels, dropdown options, and any displayed text."
+        },
+        {
+          "path": "frontend/src/utils/pdfGenerator.ts",
+          "operation": "modify",
+          "description": "Find and replace all string literals and labels containing 'HELPER' with 'ASSIS TECHNICIAN' in the PDF generation logic, ensuring the new label appears in all relevant sections of the generated report."
         }
       ]
     }
