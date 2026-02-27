@@ -2,12 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-make-the-overall-app-layout-compact-in-frontend-src-app-tsx-and-frontend-src-components-reportform-tsx-reduce-vertical-padding-margins-and-gaps-between-form-sections-and-fields-throughout-the-form-tighten-spacing-on-section-headings-dividers-and-card-containers-so-more-content-is-visible-without-scrolling-ensure-the-layout-remains-clean-and-readable-on-standard-desktop-and-mobile-viewports",
-      "featureTitle": "Make the overall app layout compact in frontend/src/App.tsx and frontend/src/components/ReportForm.tsx: reduce vertical padding, margins, and gaps between form sections and fields throughout the form. Tighten spacing on section headings, dividers, and card containers so more content is visible without scrolling. Ensure the layout remains clean and readable on standard desktop and mobile viewports.",
+      "featureId": "feature-in-frontend-src-components-reportform-tsx-rename-all-visible-labels-placeholders-and-aria-labels-that-currently-read-assis-tech-or-assis-tech-to-assis-technician-or-assis-technician-respectively-the-input-field-for-this-personnel-entry-and-its-section-heading-must-display-assis-technician",
+      "featureTitle": "In frontend/src/components/ReportForm.tsx, rename all visible labels, placeholders, and aria labels that currently read 'Assis Tech' or 'ASSIS TECH' to 'Assis Technician' or 'ASSIS TECHNICIAN' respectively. The input field for this personnel entry and its section heading must display 'Assis Technician'.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/ReportForm.tsx",
-        "frontend/src/index.css"
+        "frontend/src/components/ReportForm.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -17,15 +15,14 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-19"
+        "REQ-51"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-frontend-src-components-reportform-tsx-combine-the-check-in-date-and-time-inputs-into-a-single-row-side-by-side-and-combine-the-check-out-date-and-time-inputs-into-a-single-row-side-by-side-use-a-single-datetime-local-html-input-for-each-check-in-and-check-out-so-the-user-picks-both-date-and-time-in-one-control-or-render-the-date-and-time-pickers-inline-on-the-same-row-update-the-reportdata-interface-and-generatereportpdf-in-frontend-src-utils-pdfgenerator-ts-to-reflect-the-combined-datetime-values-for-check-in-and-check-out",
-      "featureTitle": "In frontend/src/components/ReportForm.tsx, combine the Check In date and time inputs into a single row (side by side) and combine the Check Out date and time inputs into a single row (side by side). Use a single datetime-local HTML input for each (Check In and Check Out) so the user picks both date and time in one control, or render the date and time pickers inline on the same row. Update the ReportData interface and generateReportPDF in frontend/src/utils/pdfGenerator.ts to reflect the combined datetime values for Check In and Check Out.",
+      "featureId": "feature-in-frontend-src-utils-pdfgenerator-ts-update-the-generatereportpdf-function-to-display-the-label-assis-technician-instead-of-assis-tech-in-the-pdf-output-for-the-assisttech-field-the-reportdata-interface-property-name-assisttech-remains-unchanged",
+      "featureTitle": "In frontend/src/utils/pdfGenerator.ts, update the generateReportPDF function to display the label 'Assis Technician:' (instead of 'Assis Tech:') in the PDF output for the assistTech field. The ReportData interface property name 'assistTech' remains unchanged.",
       "files": [
-        "frontend/src/components/ReportForm.tsx",
         "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
@@ -36,15 +33,14 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-20"
+        "REQ-52"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-replace-the-separate-check-in-and-check-out-datetime-inputs-in-frontend-src-components-reportform-tsx-with-a-single-toggle-button-labeled-check-in-when-the-user-presses-it-for-the-first-time-it-records-the-current-date-and-time-as-the-check-in-timestamp-and-the-button-label-changes-to-check-out-when-the-user-presses-the-same-button-a-second-time-it-records-the-current-date-and-time-as-the-check-out-timestamp-and-the-button-becomes-inactive-or-resets-with-a-visual-confirmation-display-the-recorded-check-in-and-check-out-timestamps-as-read-only-text-near-the-button-both-timestamps-must-be-passed-through-to-the-reportdata-interface-and-appear-in-the-generated-pdf-report-via-frontend-src-utils-pdfgenerator-ts",
-      "featureTitle": "Replace the separate Check In and Check Out datetime inputs in frontend/src/components/ReportForm.tsx with a single toggle button labeled 'Check In'. When the user presses it for the first time, it records the current date and time as the Check In timestamp and the button label changes to 'Check Out'. When the user presses the same button a second time, it records the current date and time as the Check Out timestamp and the button becomes inactive (or resets with a visual confirmation). Display the recorded Check In and Check Out timestamps as read-only text near the button. Both timestamps must be passed through to the ReportData interface and appear in the generated PDF report via frontend/src/utils/pdfGenerator.ts.",
+      "featureId": "feature-update-the-pdf-layout-in-frontend-src-utils-pdfgenerator-ts-to-visually-mirror-the-app-s-industrial-dark-theme-aesthetic-in-terms-of-layout-typography-and-spacing-without-changing-the-existing-color-values-specifically-use-bold-wide-tracked-uppercase-typography-for-section-headings-matching-the-app-s-oswald-bold-heading-style-increase-whitespace-and-padding-around-section-blocks-to-match-the-app-s-card-based-section-layout-render-field-label-value-pairs-in-a-structured-two-column-or-clearly-separated-format-with-consistent-line-spacing-apply-visible-horizontal-divider-lines-between-sections-to-mirror-the-app-s-section-dividers-ensure-the-pdf-header-block-security-engineering-inc-daily-field-report-uses-bold-large-type-for-the-company-name-and-a-smaller-subtitle-line-matching-the-app-header-hierarchy-do-not-alter-any-color-values-currently-used-in-the-pdf",
+      "featureTitle": "Update the PDF layout in frontend/src/utils/pdfGenerator.ts to visually mirror the app's industrial dark-theme aesthetic in terms of layout, typography, and spacing — without changing the existing color values. Specifically: use bold, wide-tracked uppercase typography for section headings (matching the app's Oswald/bold heading style); increase whitespace and padding around section blocks to match the app's card-based section layout; render field label-value pairs in a structured two-column or clearly separated format with consistent line spacing; apply visible horizontal divider lines between sections to mirror the app's section dividers; ensure the PDF header block ('SECURITY ENGINEERING INC.' / 'Daily Field Report') uses bold large type for the company name and a smaller subtitle line, matching the app header hierarchy. Do not alter any color values currently used in the PDF.",
       "files": [
-        "frontend/src/components/ReportForm.tsx",
         "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
@@ -55,7 +51,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-21"
+        "REQ-53"
       ],
       "confidence": "high"
     }

@@ -1,419 +1,403 @@
 export interface ReportData {
-    checkInDateTime: string;   // ISO string from punch button
-    checkOutDateTime: string;  // ISO string from punch button
-    closeOutReport: string;
-    projectManager: string;
-    locationContact: string;
-    leadTechnician: string;
-    helper: string;
-    jobCode?: string;
-    customerName?: string;
-    jobLocation?: string;
-    jobType: string;
-    jobDescription: string;
-    completionStatus: string;
-    beforeImage?: string;
-    afterImage?: string;
+  checkIn: string;
+  checkOut: string;
+  projectManager: string;
+  locationContact: string;
+  leadTechnician: string;
+  assistTech: string;
+  jobCode: string;
+  customerName: string;
+  jobLocation: string;
+  jobType: string;
+  jobDescription: string;
+  completionStatus: string;
+  closeOutReport: string;
+  sitePhotos?: string[];
 }
 
-// jsPDF is loaded via CDN script tag in index.html
 declare const window: Window & {
-    jspdf: {
-        jsPDF: new (options?: {
-            orientation?: string;
-            unit?: string;
-            format?: string | number[];
-        }) => JsPDFInstance;
-    };
+  jspdf?: { jsPDF: new (...args: unknown[]) => jsPDFInstance };
 };
 
-interface JsPDFInstance {
-    internal: {
-        pageSize: { getWidth: () => number; getHeight: () => number };
-        getNumberOfPages: () => number;
-    };
-    setFillColor: (r: number, g: number, b: number) => void;
-    setDrawColor: (r: number, g: number, b: number) => void;
-    setTextColor: (r: number, g: number, b: number) => void;
-    setFont: (fontName: string, fontStyle: string) => void;
-    setFontSize: (size: number) => void;
-    setLineWidth: (width: number) => void;
-    setGState: (gState: unknown) => void;
-    GState: new (params: { opacity?: number; 'fill-opacity'?: number }) => unknown;
-    rect: (x: number, y: number, w: number, h: number, style?: string) => void;
-    roundedRect: (x: number, y: number, w: number, h: number, rx: number, ry: number, style?: string) => void;
-    triangle: (x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, style?: string) => void;
-    text: (text: string | string[], x: number, y: number, options?: { align?: string }) => void;
-    splitTextToSize: (text: string, maxWidth: number) => string[];
-    line: (x1: number, y1: number, x2: number, y2: number) => void;
-    addImage: (
-        imageData: string,
-        format: string,
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        alias?: string,
-        compression?: string,
-        rotation?: number
-    ) => void;
-    addPage: () => void;
-    save: (filename: string) => void;
+interface jsPDFInstance {
+  internal: {
+    pageSize: { getWidth: () => number; getHeight: () => number };
+    getNumberOfPages: () => number;
+  };
+  setPage: (page: number) => void;
+  addPage: () => void;
+  setFillColor: (r: number, g: number, b: number) => void;
+  setTextColor: (r: number, g: number, b: number) => void;
+  setDrawColor: (r: number, g: number, b: number) => void;
+  setFont: (font: string, style?: string) => void;
+  setFontSize: (size: number) => void;
+  setLineWidth: (width: number) => void;
+  rect: (x: number, y: number, w: number, h: number, style?: string) => void;
+  line: (x1: number, y1: number, x2: number, y2: number) => void;
+  text: (text: string | string[], x: number, y: number, options?: Record<string, unknown>) => void;
+  addImage: (imageData: string, format: string, x: number, y: number, w: number, h: number) => void;
+  getImageProperties: (imageData: string) => { width: number; height: number };
+  save: (filename: string) => void;
+  splitTextToSize: (text: string, maxWidth: number) => string[];
 }
 
-function formatDateTime(isoStr: string): string {
-    if (!isoStr) return '—';
-    try {
-        const d = new Date(isoStr);
-        return d.toLocaleString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric',
-            hour: 'numeric', minute: '2-digit', hour12: true
-        });
-    } catch {
-        return isoStr;
+function getJsPDF(): new (...args: unknown[]) => jsPDFInstance {
+  const w = window as typeof window & { jspdf?: { jsPDF: new (...args: unknown[]) => jsPDFInstance } };
+  if (w.jspdf?.jsPDF) return w.jspdf.jsPDF;
+  throw new Error('jsPDF not loaded. Make sure the CDN script is included in index.html.');
+}
+
+// Colors — unchanged from original
+const C = {
+  headerBg: [20, 20, 20] as [number, number, number],
+  headerText: [255, 204, 0] as [number, number, number],
+  headerSub: [180, 180, 180] as [number, number, number],
+  sectionBg: [30, 30, 30] as [number, number, number],
+  sectionText: [255, 204, 0] as [number, number, number],
+  labelText: [150, 150, 150] as [number, number, number],
+  valueText: [230, 230, 230] as [number, number, number],
+  divider: [60, 60, 60] as [number, number, number],
+  pageBg: [15, 15, 15] as [number, number, number],
+  footerBg: [20, 20, 20] as [number, number, number],
+  footerText: [120, 120, 120] as [number, number, number],
+  accent: [255, 204, 0] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
+  cardBg: [22, 22, 22] as [number, number, number],
+  cardBorder: [45, 45, 45] as [number, number, number],
+};
+
+function drawPageBackground(doc: jsPDFInstance, pageWidth: number, pageHeight: number) {
+  doc.setFillColor(...C.pageBg);
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
+}
+
+function drawHeader(doc: jsPDFInstance, pageWidth: number) {
+  // Header background — full-width dark bar
+  doc.setFillColor(...C.headerBg);
+  doc.rect(0, 0, pageWidth, 46, 'F');
+
+  // Left accent bar (mirrors the app's left-border card style)
+  doc.setFillColor(...C.accent);
+  doc.rect(0, 0, 4, 46, 'F');
+
+  // Bottom accent line
+  doc.setFillColor(...C.accent);
+  doc.rect(0, 46, pageWidth, 1.5, 'F');
+
+  // Company name — large bold uppercase (mirrors app header "SECURITY ENGINEERING INC.")
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(...C.headerText);
+  doc.text('SECURITY ENGINEERING INC.', pageWidth / 2, 18, { align: 'center' });
+
+  // Report title — smaller subtitle (mirrors app "Daily Field Report")
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...C.headerSub);
+  // Spaced-out tracking effect via character spacing workaround
+  doc.text('DAILY  FIELD  REPORT', pageWidth / 2, 29, { align: 'center' });
+
+  // Date generated — smallest line
+  const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C.footerText);
+  doc.text(`Generated: ${dateStr}`, pageWidth / 2, 39, { align: 'center' });
+}
+
+function drawFooter(doc: jsPDFInstance, pageWidth: number, pageHeight: number, pageNum: number, totalPages: number) {
+  doc.setFillColor(...C.footerBg);
+  doc.rect(0, pageHeight - 14, pageWidth, 14, 'F');
+
+  // Top accent line on footer
+  doc.setFillColor(...C.accent);
+  doc.rect(0, pageHeight - 14, pageWidth, 1, 'F');
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C.footerText);
+  doc.text('Security Engineering Inc. — Confidential Field Report', 12, pageHeight - 5);
+  doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - 12, pageHeight - 5, { align: 'right' });
+}
+
+/**
+ * Draws a section header that mirrors the app's card section headings:
+ * dark background block, left accent bar, bold uppercase label with wide tracking.
+ */
+function drawSectionHeader(doc: jsPDFInstance, label: string, y: number, pageWidth: number): number {
+  const margin = 10;
+
+  // Card-like section background
+  doc.setFillColor(...C.sectionBg);
+  doc.rect(margin, y, pageWidth - margin * 2, 9, 'F');
+
+  // Left accent bar — mirrors app's yellow left-border on section headings
+  doc.setFillColor(...C.accent);
+  doc.rect(margin, y, 3, 9, 'F');
+
+  // Section label — bold, uppercase, wide tracking (mirrors app heading style)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...C.sectionText);
+  doc.text(label.toUpperCase(), margin + 7, y + 6);
+
+  return y + 13; // extra bottom padding after heading
+}
+
+/**
+ * Draws a horizontal divider line between sections,
+ * mirroring the app's card/section dividers.
+ */
+function drawDivider(doc: jsPDFInstance, y: number, pageWidth: number): number {
+  doc.setDrawColor(...C.divider);
+  doc.setLineWidth(0.4);
+  doc.line(10, y, pageWidth - 10, y);
+  return y + 5;
+}
+
+/**
+ * Draws a card-like container background for a section's content block.
+ * Mirrors the app's bg-surface card style.
+ */
+function drawCardBackground(doc: jsPDFInstance, x: number, y: number, w: number, h: number) {
+  doc.setFillColor(...C.cardBg);
+  doc.rect(x, y, w, h, 'F');
+  // Subtle border
+  doc.setDrawColor(...C.cardBorder);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, w, h, 'S');
+}
+
+/**
+ * Draws a label + value pair with consistent spacing.
+ * Label is small, muted, uppercase. Value is larger, light-colored.
+ */
+function drawField(doc: jsPDFInstance, label: string, value: string, x: number, y: number, colWidth: number): number {
+  // Label — small, muted, uppercase (mirrors app's labelClass)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...C.labelText);
+  doc.text(label.toUpperCase(), x, y);
+
+  // Value — normal weight, light color (mirrors app's value text)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...C.valueText);
+  const lines = doc.splitTextToSize(value || '—', colWidth - 4);
+  doc.text(lines, x, y + 5);
+
+  return y + 5 + lines.length * 4.8 + 3;
+}
+
+export function generateReportPDF(data: ReportData): void {
+  const JsPDF = getJsPDF();
+  const doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 10;
+  const contentWidth = pageWidth - margin * 2;
+  const colWidth = (contentWidth - 6) / 2;
+  const headerH = 50; // taller header
+  const footerH = 16;
+  const maxY = pageHeight - footerH;
+
+  let y = headerH;
+
+  // Draw first page background and header
+  drawPageBackground(doc, pageWidth, pageHeight);
+  drawHeader(doc, pageWidth);
+
+  const ensureSpace = (needed: number): number => {
+    if (y + needed > maxY) {
+      doc.addPage();
+      drawPageBackground(doc, pageWidth, pageHeight);
+      drawHeader(doc, pageWidth);
+      y = headerH;
     }
-}
+    return y;
+  };
 
-function extractDateOnly(isoStr: string): string {
-    if (!isoStr) return '';
-    try {
-        const d = new Date(isoStr);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}${m}${day}`;
-    } catch {
-        return '';
-    }
-}
+  const leftX = margin;
+  const rightX = margin + colWidth + 6;
 
-/** Returns the natural pixel dimensions of an image from a base64 data URL. */
-function getImageDimensions(dataUrl: string): Promise<{ width: number; height: number }> {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-        img.onerror = () => resolve({ width: 1, height: 1 });
-        img.src = dataUrl;
-    });
-}
+  // ── Time & Attendance ──
+  y = ensureSpace(48);
+  y = drawSectionHeader(doc, 'Time & Attendance', y, pageWidth);
 
-/** Extracts the jsPDF-compatible format string from a base64 data URL. */
-function getImageFormat(dataUrl: string): string {
-    if (dataUrl.startsWith('data:image/png')) return 'PNG';
-    if (dataUrl.startsWith('data:image/webp')) return 'WEBP';
-    return 'JPEG';
-}
+  // Card background for this section's content
+  const taCardY = y;
+  const taCardH = 22;
+  drawCardBackground(doc, margin, taCardY, contentWidth, taCardH);
+  y = taCardY + 4;
 
-export async function generateReportPDF(data: ReportData): Promise<void> {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const ciY = drawField(doc, 'Check In', data.checkIn, leftX + 3, y, colWidth);
+  const coY = drawField(doc, 'Check Out', data.checkOut, rightX - 3, y, colWidth);
+  y = Math.max(ciY, coY);
+  y = taCardY + taCardH + 5;
 
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 18;
-    const contentWidth = pageWidth - margin * 2;
+  y = drawDivider(doc, y, pageWidth);
 
-    // ── Color Palette ────────────────────────────────────────────────────────
-    const blackR = 10,    blackG = 10,    blackB = 10;
-    const darkR  = 28,    darkG  = 28,    darkB  = 28;
-    const whiteR = 255,   whiteG = 255,   whiteB = 255;
-    const lightBgR = 248, lightBgG = 248, lightBgB = 248;
-    const labelR = 110,   labelG = 110,   labelB = 110;
-    const valueR = 18,    valueG = 18,    valueB = 18;
-    const borderR = 215,  borderG = 215,  borderB = 215;
-    const mutedR  = 150,  mutedG  = 150,  mutedB  = 150;
-    const accentR = 30,   accentG = 60,   accentB = 120;  // navy blue accent
+  // ── Personnel ──
+  y = ensureSpace(58);
+  y = drawSectionHeader(doc, 'Personnel', y, pageWidth);
 
-    // ── Shared helpers ────────────────────────────────────────────────────────
-    const drawPageBackground = () => {
-        doc.setFillColor(lightBgR, lightBgG, lightBgB);
-        doc.rect(0, 0, pageWidth, pageHeight, 'F');
-    };
+  const pCardY = y;
+  const pCardH = 36;
+  drawCardBackground(doc, margin, pCardY, contentWidth, pCardH);
+  y = pCardY + 4;
 
-    const drawFooter = (pageLabel: string) => {
-        const footerY = pageHeight - 14;
-        doc.setFillColor(accentR, accentG, accentB);
-        doc.rect(0, footerY - 4, pageWidth, 1.5, 'F');
-        doc.setFillColor(blackR, blackG, blackB);
-        doc.rect(0, footerY - 2.5, pageWidth, 16.5, 'F');
-        doc.setTextColor(mutedR, mutedG, mutedB);
-        doc.setFont('helvetica', 'normal');
+  const pmY = drawField(doc, 'Project Manager', data.projectManager, leftX + 3, y, colWidth);
+  const lcY = drawField(doc, 'Location Contact', data.locationContact, rightX - 3, y, colWidth);
+  y = Math.max(pmY, lcY) + 2;
+
+  const ltY = drawField(doc, 'Lead Technician', data.leadTechnician, leftX + 3, y, colWidth);
+  const atY = drawField(doc, 'Assis Technician', data.assistTech, rightX - 3, y, colWidth);
+  y = Math.max(ltY, atY);
+  y = pCardY + pCardH + 5;
+
+  y = drawDivider(doc, y, pageWidth);
+
+  // ── Job Details ──
+  y = ensureSpace(58);
+  y = drawSectionHeader(doc, 'Job Details', y, pageWidth);
+
+  const jdCardY = y;
+  const jdCardH = 36;
+  drawCardBackground(doc, margin, jdCardY, contentWidth, jdCardH);
+  y = jdCardY + 4;
+
+  const jcY = drawField(doc, 'Job Code', data.jobCode, leftX + 3, y, colWidth);
+  const cnY = drawField(doc, 'Customer Name', data.customerName, rightX - 3, y, colWidth);
+  y = Math.max(jcY, cnY) + 2;
+
+  const jlY = drawField(doc, 'Job Location', data.jobLocation, leftX + 3, y, colWidth);
+  const jtY = drawField(doc, 'Job Type', data.jobType, rightX - 3, y, colWidth);
+  y = Math.max(jlY, jtY);
+  y = jdCardY + jdCardH + 5;
+
+  y = drawDivider(doc, y, pageWidth);
+
+  // ── Completion Status ──
+  y = ensureSpace(30);
+  y = drawSectionHeader(doc, 'Completion Status', y, pageWidth);
+
+  const csCardY = y;
+  const csCardH = 16;
+  drawCardBackground(doc, margin, csCardY, contentWidth, csCardH);
+  y = csCardY + 4;
+
+  // Status value with accent color highlight
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...C.labelText);
+  doc.text('STATUS', leftX + 3, y);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...C.accent);
+  doc.text((data.completionStatus || '—').toUpperCase(), leftX + 3, y + 6);
+
+  y = csCardY + csCardH + 5;
+  y = drawDivider(doc, y, pageWidth);
+
+  // ── Job Description ──
+  y = ensureSpace(35);
+  y = drawSectionHeader(doc, 'Job Description', y, pageWidth);
+
+  const descLines = doc.splitTextToSize(data.jobDescription || '—', contentWidth - 10);
+  const descContentH = descLines.length * 5 + 8;
+  y = ensureSpace(descContentH + 10);
+
+  const descCardY = y;
+  drawCardBackground(doc, margin, descCardY, contentWidth, descContentH);
+  y = descCardY + 5;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...C.valueText);
+  doc.text(descLines, leftX + 3, y);
+  y = descCardY + descContentH + 5;
+
+  y = drawDivider(doc, y, pageWidth);
+
+  // ── Close Out Report ──
+  y = ensureSpace(35);
+  y = drawSectionHeader(doc, 'Close Out Report', y, pageWidth);
+
+  const corLines = doc.splitTextToSize(data.closeOutReport || '—', contentWidth - 10);
+  const corContentH = corLines.length * 5 + 8;
+  y = ensureSpace(corContentH + 10);
+
+  const corCardY = y;
+  drawCardBackground(doc, margin, corCardY, contentWidth, corContentH);
+  y = corCardY + 5;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...C.valueText);
+  doc.text(corLines, leftX + 3, y);
+  y = corCardY + corContentH + 5;
+
+  y = drawDivider(doc, y, pageWidth);
+
+  // ── Site Photos ──
+  if (data.sitePhotos && data.sitePhotos.length > 0) {
+    y = ensureSpace(25);
+    y = drawSectionHeader(doc, 'Site Photos', y, pageWidth);
+
+    for (let i = 0; i < data.sitePhotos.length; i++) {
+      const imgData = data.sitePhotos[i];
+      try {
+        const props = doc.getImageProperties(imgData);
+        const maxImgWidth = contentWidth - 6;
+        const aspectRatio = props.height / props.width;
+        const imgW = maxImgWidth;
+        const imgH = imgW * aspectRatio;
+
+        // Ensure enough space for the image
+        const neededH = Math.min(imgH, maxY - headerH - 10) + 14;
+        y = ensureSpace(neededH);
+
+        // Photo label card
+        const photoLabelH = 9;
+        drawCardBackground(doc, margin, y, contentWidth, photoLabelH);
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(7);
-        doc.text('SECURITY ENGINEERING INC.  ·  Est. 1975  ·  Confidential Field Report', margin, footerY + 5);
-        doc.text(pageLabel, pageWidth - margin, footerY + 5, { align: 'right' });
-    };
+        doc.setTextColor(...C.labelText);
+        doc.text(`PHOTO ${i + 1} OF ${data.sitePhotos.length}`, leftX + 3, y + 6);
+        y += photoLabelH + 2;
 
-    const drawSectionHeader = (title: string, y: number): number => {
-        doc.setFillColor(accentR, accentG, accentB);
-        doc.rect(margin, y, 3, 9, 'F');
-        doc.setFillColor(darkR, darkG, darkB);
-        doc.rect(margin + 3, y, contentWidth - 3, 9, 'F');
-        doc.setTextColor(whiteR, whiteG, whiteB);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.text(title.toUpperCase(), margin + 8, y + 6);
-        return y + 9;
-    };
+        // Clamp image height to available space
+        const availH = maxY - y - 6;
+        const renderH = Math.min(imgH, availH);
+        const renderW = renderH / aspectRatio;
 
-    const drawField = (label: string, value: string, x: number, y: number, w: number): void => {
-        doc.setFillColor(whiteR, whiteG, whiteB);
-        doc.roundedRect(x, y, w, 14, 1.5, 1.5, 'F');
-        doc.setDrawColor(borderR, borderG, borderB);
-        doc.setLineWidth(0.25);
-        doc.roundedRect(x, y, w, 14, 1.5, 1.5, 'S');
-        doc.setTextColor(labelR, labelG, labelB);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(6.5);
-        doc.text(label.toUpperCase(), x + 3.5, y + 5.2);
-        doc.setTextColor(valueR, valueG, valueB);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9.5);
-        const displayValue = value.trim() || '—';
-        doc.text(displayValue, x + 3.5, y + 11.2);
-    };
+        // Thin border around image
+        doc.setDrawColor(...C.cardBorder);
+        doc.setLineWidth(0.4);
+        doc.rect(margin, y, renderW + 3, renderH + 3, 'S');
 
-    const drawTextAreaField = (label: string, value: string, x: number, y: number, w: number, h: number): void => {
-        doc.setFillColor(whiteR, whiteG, whiteB);
-        doc.roundedRect(x, y, w, h, 1.5, 1.5, 'F');
-        doc.setDrawColor(borderR, borderG, borderB);
-        doc.setLineWidth(0.25);
-        doc.roundedRect(x, y, w, h, 1.5, 1.5, 'S');
-        doc.setTextColor(labelR, labelG, labelB);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(6.5);
-        doc.text(label.toUpperCase(), x + 3.5, y + 5.2);
-        doc.setTextColor(valueR, valueG, valueB);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        const displayValue = value.trim() || '—';
-        const lines = doc.splitTextToSize(displayValue, w - 7);
-        doc.text(lines, x + 3.5, y + 11.5);
-    };
+        doc.addImage(imgData, 'JPEG', margin + 1.5, y + 1.5, renderW, renderH);
+        y += renderH + 8;
 
-    // ════════════════════════════════════════════════════════════════════════
-    // PAGE 1
-    // ════════════════════════════════════════════════════════════════════════
-    drawPageBackground();
-
-    // ── Header band ──────────────────────────────────────────────────────────
-    doc.setFillColor(blackR, blackG, blackB);
-    doc.rect(0, 0, pageWidth, 52, 'F');
-    doc.setFillColor(accentR, accentG, accentB);
-    doc.rect(0, 0, pageWidth, 3, 'F');
-    doc.setFillColor(whiteR, whiteG, whiteB);
-    doc.rect(0, 52, pageWidth, 1.5, 'F');
-
-    const textStartX = margin;
-    doc.setTextColor(whiteR, whiteG, whiteB);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('SECURITY ENGINEERING INC.', textStartX, 22);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(mutedR, mutedG, mutedB);
-    doc.text('DAILY FIELD REPORT', textStartX, 31);
-
-    doc.setDrawColor(accentR, accentG, accentB);
-    doc.setLineWidth(0.5);
-    doc.line(textStartX, 34.5, textStartX + 60, 34.5);
-
-    doc.setTextColor(mutedR, mutedG, mutedB);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Est. 1975  ·  Professional Security Solutions', textStartX, 42);
-
-    const reportDate = new Date().toLocaleDateString('en-US', {
-        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-    });
-    doc.setTextColor(mutedR, mutedG, mutedB);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${reportDate}`, pageWidth - margin, 22, { align: 'right' });
-
-    const reportDateStr = extractDateOnly(data.checkInDateTime) || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const reportId = `RPT-${reportDateStr}`;
-    doc.setFontSize(7);
-    doc.text(`Report ID: ${reportId}`, pageWidth - margin, 30, { align: 'right' });
-
-    // ── Content ───────────────────────────────────────────────────────────────
-    let yPos = 62;
-    const halfW = (contentWidth - 5) / 2;
-    const thirdW = (contentWidth - 10) / 3;
-
-    // Section 1: Time & Attendance
-    yPos = drawSectionHeader('Time & Attendance', yPos);
-    yPos += 4;
-
-    drawField('Check-In', formatDateTime(data.checkInDateTime), margin, yPos, halfW);
-    drawField('Check-Out', formatDateTime(data.checkOutDateTime), margin + halfW + 5, yPos, halfW);
-    yPos += 18;
-
-    if (data.checkInDateTime && data.checkOutDateTime) {
-        try {
-            const inDt = new Date(data.checkInDateTime);
-            const outDt = new Date(data.checkOutDateTime);
-            const diffMs = outDt.getTime() - inDt.getTime();
-            if (diffMs > 0) {
-                const hours = Math.floor(diffMs / 3600000);
-                const minutes = Math.floor((diffMs % 3600000) / 60000);
-                const durationStr = `${hours} hr${hours !== 1 ? 's' : ''} ${minutes} min`;
-                doc.setFillColor(accentR, accentG, accentB);
-                doc.roundedRect(margin, yPos, contentWidth, 10.5, 1.5, 1.5, 'F');
-                doc.setTextColor(whiteR, whiteG, whiteB);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(7.5);
-                doc.text('TOTAL DURATION ON SITE', margin + 4, yPos + 4.8);
-                doc.setFontSize(9.5);
-                doc.text(durationStr, pageWidth - margin - 4, yPos + 7, { align: 'right' });
-                yPos += 14.5;
-            }
-        } catch { /* skip */ }
-    }
-
-    yPos += 5;
-
-    // Section 2: Personnel
-    yPos = drawSectionHeader('Personnel', yPos);
-    yPos += 4;
-
-    drawField('Project Manager', data.projectManager || '—', margin, yPos, halfW);
-    drawField('Location Contact', data.locationContact || '—', margin + halfW + 5, yPos, halfW);
-    yPos += 18;
-
-    drawField('Lead Technician', data.leadTechnician || '—', margin, yPos, halfW);
-    drawField('Helper / Assistant', data.helper || '—', margin + halfW + 5, yPos, halfW);
-    yPos += 18;
-
-    yPos += 5;
-
-    // Section 3: Job Details
-    yPos = drawSectionHeader('Job Details', yPos);
-    yPos += 4;
-
-    drawField('Job Code', data.jobCode || '—', margin, yPos, thirdW);
-    drawField('Customer Name', data.customerName || '—', margin + thirdW + 5, yPos, thirdW);
-    drawField('Job Location', data.jobLocation || '—', margin + (thirdW + 5) * 2, yPos, thirdW);
-    yPos += 18;
-
-    drawField('Job Type / Category', data.jobType || '—', margin, yPos, contentWidth);
-    yPos += 18;
-
-    const isComplete = data.completionStatus === 'Fully Complete';
-    if (isComplete) {
-        doc.setFillColor(accentR, accentG, accentB);
-    } else {
-        doc.setFillColor(darkR, darkG, darkB);
-    }
-    doc.roundedRect(margin, yPos, contentWidth, 14, 1.5, 1.5, 'F');
-    doc.setDrawColor(borderR, borderG, borderB);
-    doc.setLineWidth(0.25);
-    doc.roundedRect(margin, yPos, contentWidth, 14, 1.5, 1.5, 'S');
-    doc.setTextColor(mutedR, mutedG, mutedB);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.text('COMPLETION STATUS', margin + 3.5, yPos + 5.2);
-    doc.setTextColor(whiteR, whiteG, whiteB);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.text(data.completionStatus || 'Fully Complete', margin + 3.5, yPos + 11.2);
-    const statusLabel = isComplete ? '✓ COMPLETE' : '○ FOLLOW-UP REQUIRED';
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
-    doc.text(statusLabel, pageWidth - margin - 3.5, yPos + 8.5, { align: 'right' });
-    yPos += 18;
-
-    const jobDescH = Math.max(32, Math.min(55, 32 + Math.ceil(data.jobDescription.length / 80) * 5));
-    drawTextAreaField('Job Description', data.jobDescription, margin, yPos, contentWidth, jobDescH);
-    yPos += jobDescH + 5;
-
-    yPos += 4;
-
-    // Section 4: Close Out Report
-    yPos = drawSectionHeader('Close Out Report', yPos);
-    yPos += 4;
-
-    const remainingHeight = pageHeight - yPos - 24;
-    const textAreaH = Math.max(38, Math.min(remainingHeight, 65));
-    drawTextAreaField('Summary / Notes', data.closeOutReport, margin, yPos, contentWidth, textAreaH);
-
-    // Determine total pages for footer
-    const hasPhotos = !!(data.beforeImage || data.afterImage);
-    const totalPages = hasPhotos ? 2 : 1;
-
-    // Draw footer on page 1
-    drawFooter(`Page 1 of ${totalPages}`);
-
-    // ════════════════════════════════════════════════════════════════════════
-    // PAGE 2 — Site Photos (only if photos provided)
-    // ════════════════════════════════════════════════════════════════════════
-    if (hasPhotos) {
-        doc.addPage();
-        drawPageBackground();
-
-        // Compact header band for continuation page
-        doc.setFillColor(blackR, blackG, blackB);
-        doc.rect(0, 0, pageWidth, 22, 'F');
-        doc.setFillColor(accentR, accentG, accentB);
-        doc.rect(0, 0, pageWidth, 3, 'F');
-        doc.setFillColor(whiteR, whiteG, whiteB);
-        doc.rect(0, 22, pageWidth, 1, 'F');
-
-        doc.setTextColor(whiteR, whiteG, whiteB);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.text('SECURITY ENGINEERING INC.', margin, 14);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(mutedR, mutedG, mutedB);
-        doc.text('DAILY FIELD REPORT — SITE PHOTOS', pageWidth - margin, 14, { align: 'right' });
-
-        let photoY = 32;
-        photoY = drawSectionHeader('Site Photos', photoY);
-        photoY += 7;
-
-        const photoEntries: Array<{ label: string; dataUrl: string }> = [];
-        if (data.beforeImage) photoEntries.push({ label: 'Before', dataUrl: data.beforeImage });
-        if (data.afterImage) photoEntries.push({ label: 'After', dataUrl: data.afterImage });
-
-        for (const photo of photoEntries) {
-            const dims = await getImageDimensions(photo.dataUrl);
-            const aspectRatio = dims.width / dims.height;
-
-            const maxImgW = contentWidth;
-            const maxImgH = 85;
-            let imgW = maxImgW;
-            let imgH = imgW / aspectRatio;
-            if (imgH > maxImgH) {
-                imgH = maxImgH;
-                imgW = imgH * aspectRatio;
-            }
-
-            doc.setTextColor(labelR, labelG, labelB);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(7.5);
-            doc.text(photo.label.toUpperCase(), margin, photoY + 4);
-            doc.setDrawColor(accentR, accentG, accentB);
-            doc.setLineWidth(0.5);
-            doc.line(margin, photoY + 5.8, margin + 22, photoY + 5.8);
-
-            photoY += 10;
-
-            doc.setFillColor(whiteR, whiteG, whiteB);
-            doc.setDrawColor(borderR, borderG, borderB);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(margin, photoY, imgW, imgH, 2, 2, 'FD');
-
-            const fmt = getImageFormat(photo.dataUrl);
-            doc.addImage(photo.dataUrl, fmt, margin, photoY, imgW, imgH);
-
-            photoY += imgH + 14;
+        if (i < data.sitePhotos.length - 1) {
+          y = drawDivider(doc, y, pageWidth);
         }
-
-        drawFooter('Page 2 of 2');
+      } catch {
+        // Skip images that fail to load
+      }
     }
+  }
 
-    // ── Save ─────────────────────────────────────────────────────────────────
-    const dateStr = extractDateOnly(data.checkInDateTime) || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    doc.save(`SECENG_Daily_Report_${dateStr}.pdf`);
+  // ── Finalize: add footers to all pages ──
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    drawFooter(doc, pageWidth, pageHeight, p, totalPages);
+  }
+
+  // Save
+  const dateTag = new Date().toISOString().slice(0, 10);
+  const jobTag = data.jobCode ? `_${data.jobCode.replace(/[^a-zA-Z0-9]/g, '-')}` : '';
+  doc.save(`field-report${jobTag}_${dateTag}.pdf`);
 }

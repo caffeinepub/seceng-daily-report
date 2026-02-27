@@ -1,78 +1,57 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Compact layout, combined date/time fields, and Check In/Out toggle button",
+  "title": "Rename 'Assis Tech' to 'Assis Technician' and update PDF layout to mirror app theme",
   "requirements": [
     {
-      "id": "REQ-19",
-      "summary": "Make the overall app layout compact by reducing vertical padding, margins, and gaps between form sections and fields",
+      "id": "REQ-51",
+      "summary": "Update all visible labels in ReportForm.tsx to display 'Assis Technician' instead of 'Assis Tech'",
       "acceptanceCriteria": [
-        "Vertical padding and margins between form sections are visibly reduced compared to the previous version.",
-        "Section headings and dividers use minimal spacing.",
-        "The form fits more content in the viewport without sacrificing readability.",
-        "No layout overflow or broken alignment on desktop or mobile."
+        "The personnel input field label reads 'Assis Technician' (not 'Assis Tech' or 'Helper')",
+        "The placeholder text for that input reads 'Assis Technician' or similar",
+        "Any section heading that previously displayed 'ASSIS TECH' now displays 'ASSIS TECHNICIAN'",
+        "No remaining instances of 'Assis Tech' or 'ASSIS TECH' appear in the form UI"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Reduce vertical padding and margins in the main layout container, hero banner section, and wrapper elements. Tighten spacing around the header, form container, and footer to maximize visible content area while maintaining clean alignment on desktop and mobile viewports."
-        },
-        {
           "path": "frontend/src/components/ReportForm.tsx",
           "operation": "modify",
-          "description": "Reduce vertical spacing throughout the form: decrease padding and margins on section containers, form field groups, section headings, dividers, and card elements. Apply tighter gaps between input fields and field labels. Ensure the Site Photos section and all other form sections use compact spacing while remaining readable and maintaining the black-and-white theme."
-        },
-        {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Update global utility classes for cards, inputs, buttons, and typography to use reduced padding and margin values. Adjust spacing utilities to support the compact layout across all form components without breaking existing styles or theme consistency."
+          "description": "Replace all visible text content that currently displays 'Assis Tech' or 'ASSIS TECH' with 'Assis Technician' or 'ASSIS TECHNICIAN' respectively. Update labels, placeholders, and aria-labels for the assistTech input field and its section heading. The ReportData interface property name 'assistTech' remains unchanged; only UI-visible text is updated."
         }
       ]
     },
     {
-      "id": "REQ-20",
-      "summary": "Combine Check In and Check Out date and time inputs into single datetime-local controls on the same row",
+      "id": "REQ-52",
+      "summary": "Update PDF output to display 'Assis Technician:' label instead of 'Assis Tech:'",
       "acceptanceCriteria": [
-        "Check In has a single combined date-and-time input control (or two controls on the same row).",
-        "Check Out has a single combined date-and-time input control (or two controls on the same row).",
-        "The combined datetime values are correctly passed to the PDF generator and appear formatted in the generated PDF.",
-        "The layout is consistent with the existing black-and-white theme."
+        "The generated PDF report displays 'Assis Technician:' as the label for this field",
+        "No instance of 'Assis Tech:' or 'Helper:' appears in the PDF output",
+        "The ReportData interface 'assistTech' property name is unchanged"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Replace separate Check In date and time inputs with a single datetime-local input control, and replace separate Check Out date and time inputs with a single datetime-local input control. Store the combined datetime values in the form state and ensure both are styled consistently with the black-and-white theme. Update form field rendering to place each datetime-local control in its own row with appropriate labels."
-        },
-        {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Update the ReportData interface to accept combined datetime values for checkInDateTime and checkOutDateTime (replacing separate date and time fields). Modify the generateReportPDF function to format and display these combined datetime values correctly in the generated PDF report, ensuring proper date-time string parsing and formatting."
+          "description": "In the generateReportPDF function, locate where the assistTech field label is rendered in the PDF and change the display text from 'Assis Tech:' to 'Assis Technician:'. Do not modify the ReportData interface property name or any property references in code."
         }
       ]
     },
     {
-      "id": "REQ-21",
-      "summary": "Replace datetime inputs with a single Check In/Check Out toggle button that records timestamps automatically",
+      "id": "REQ-53",
+      "summary": "Update PDF layout to mirror the app's industrial dark-theme aesthetic in typography, spacing, and structure without changing colors",
       "acceptanceCriteria": [
-        "A single button is displayed, initially labeled 'Check In'.",
-        "Pressing it records the current timestamp as Check In and the button label changes to 'Check Out'.",
-        "Pressing it a second time records the current timestamp as Check Out and the button is disabled or shows a completion state.",
-        "Recorded Check In and Check Out timestamps are displayed as read-only text next to or below the button.",
-        "Both timestamp values are included in the generated PDF report under their respective labels.",
-        "Button styling is consistent with the existing black-and-white theme."
+        "PDF section headings use bold, uppercase, wider-tracked typography consistent with the app's heading style",
+        "Horizontal divider lines appear between PDF sections, mirroring the app's card/section dividers",
+        "Field label-value pairs are consistently spaced and clearly separated throughout the PDF",
+        "The PDF header displays 'SECURITY ENGINEERING INC.' in large bold type and 'Daily Field Report' as a smaller subtitle",
+        "Padding/margins around sections in the PDF reflect the structured card-like layout of the app",
+        "No color values in the PDF output are changed from their current state"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Remove the datetime-local input controls added in REQ-20 and replace them with a single toggle button that starts with the label 'Check In'. Implement state management to track the button phase (initial, checked-in, checked-out). On first press, capture the current Date timestamp as Check In, change the button label to 'Check Out', and display the recorded Check In timestamp as read-only text. On second press, capture the current Date timestamp as Check Out, disable or visually mark the button as complete, and display the Check Out timestamp. Style the button and timestamp display consistently with the black-and-white theme."
-        },
-        {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Ensure the ReportData interface and generateReportPDF function accept the Check In and Check Out timestamp values captured by the toggle button in REQ-21. Format both timestamps appropriately in the generated PDF under their respective 'Check In' and 'Check Out' labels, handling Date objects or ISO strings as needed."
+          "description": "Refactor the PDF layout in generateReportPDF to mirror the app's industrial aesthetic: (1) Update section headings to use bold, uppercase, wide letter-spacing (tracking) typography matching Oswald/bold heading style from the app; (2) Add horizontal divider lines between major sections to match the app's section dividers; (3) Restructure field label-value pairs into a consistent two-column or clearly separated format with uniform line spacing; (4) Increase whitespace and padding around section blocks to mirror the app's card-based layout; (5) Ensure the PDF header displays 'SECURITY ENGINEERING INC.' in large bold type with 'Daily Field Report' as a smaller subtitle below, matching the app header hierarchy. Do not alter any existing color values in the PDF output."
         }
       ]
     }

@@ -1,12 +1,15 @@
 # Specification
 
 ## Summary
-**Goal:** Make the SECENG Daily Report form more compact, and replace the separate Check In/Check Out datetime inputs with a single toggle button that auto-records timestamps.
+**Goal:** Rename "Assis Tech" to "Assis Technician" throughout the form UI and PDF output, and update the PDF layout to mirror the app's industrial dark-theme aesthetic (typography, spacing, and structure) without changing any color values.
 
 **Planned changes:**
-- Reduce vertical padding, margins, and gaps throughout the form in `App.tsx` and `ReportForm.tsx` so more content is visible without scrolling.
-- Replace the Check In and Check Out datetime inputs with a single toggle button labeled "Check In"; pressing it records the current timestamp as Check In and relabels the button to "Check Out"; pressing it again records the Check Out timestamp and disables/completes the button.
-- Display the recorded Check In and Check Out timestamps as read-only text near the toggle button.
-- Update the `ReportData` interface and `pdfGenerator.ts` to pass both timestamps through to the generated PDF report.
+- In `ReportForm.tsx`, update all labels, placeholders, aria labels, and section headings from "Assis Tech" / "ASSIS TECH" to "Assis Technician" / "ASSIS TECHNICIAN"
+- In `pdfGenerator.ts`, update the displayed label for the `assistTech` field from "Assis Tech:" to "Assis Technician:" (property name unchanged)
+- Update PDF layout to use bold, uppercase, wide-tracked typography for section headings matching the app's Oswald/bold heading style
+- Add horizontal divider lines between PDF sections to mirror the app's section dividers
+- Increase whitespace and padding around section blocks to reflect the app's card-based layout
+- Render field label-value pairs in a structured, consistently spaced two-column or clearly separated format
+- Update the PDF header block so "SECURITY ENGINEERING INC." appears in large bold type and "Daily Field Report" as a smaller subtitle
 
-**User-visible outcome:** The form is more compact and fits more content on screen. Users can check in and check out with a single button press, with timestamps automatically captured and included in the generated PDF report.
+**User-visible outcome:** The form and generated PDF both display "Assis Technician" instead of "Assis Tech", and the PDF report has an improved layout that closely mirrors the app's structured, industrial heading and section style.
