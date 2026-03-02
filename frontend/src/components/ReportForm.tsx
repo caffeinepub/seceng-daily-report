@@ -1,479 +1,585 @@
 import { useState, useRef } from 'react';
-import { generateReportPDF, ReportData } from '../utils/pdfGenerator';
-import { Clock, FileText, User, MapPin, Briefcase, CheckCircle, Camera, Download, X, ImagePlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { generatePDF, TechnicianData, AssisTech } from '@/utils/pdfGenerator';
+import {
+  FileText,
+  Plus,
+  Trash2,
+  UserPlus,
+  PenLine,
+  RotateCcw,
+} from 'lucide-react';
 
-interface PhotoEntry {
-  file: File;
-  previewUrl: string;
-  label: string;
+interface FormData {
+  date: string;
+  jobName: string;
+  jobNumber: string;
+  location: string;
+  weatherConditions: string;
+  temperature: string;
+  workPerformed: string;
+  materialsUsed: string;
+  equipmentUsed: string;
+  workStatus: string;
+  percentComplete: string;
+  additionalNotes: string;
 }
 
-interface FormState {
-  jobCode: string;
-  customerName: string;
-  jobLocation: string;
-  jobType: string;
-  jobDescription: string;
-  completionStatus: string;
-  projectManager: string;
-  locationContact: string;
-  leadTechnician: string;
-  assistTech: string;
-  closeOutReport: string;
-}
-
-const initialFormState: FormState = {
-  jobCode: '',
-  customerName: '',
-  jobLocation: '',
-  jobType: '',
-  jobDescription: '',
-  completionStatus: 'Fully Complete',
-  projectManager: '',
-  locationContact: '',
-  leadTechnician: '',
-  assistTech: '',
-  closeOutReport: '',
+const defaultFormData: FormData = {
+  date: new Date().toISOString().split('T')[0],
+  jobName: '',
+  jobNumber: '',
+  location: '',
+  weatherConditions: '',
+  temperature: '',
+  workPerformed: '',
+  materialsUsed: '',
+  equipmentUsed: '',
+  workStatus: 'In Progress',
+  percentComplete: '',
+  additionalNotes: '',
 };
 
-// Convert a local datetime string (YYYY-MM-DDTHH:MM) to display format
-function toDisplayTime(dt: string): string {
-  if (!dt) return '';
-  try {
-    const d = new Date(dt);
-    return d.toLocaleString('en-US', {
-      month: '2-digit', day: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', hour12: true,
-    });
-  } catch {
-    return dt;
-  }
-}
+const defaultTechnician = (): TechnicianData => ({
+  name: '',
+  workPunchIn: '',
+  workPunchOut: '',
+  lunchPunchIn: '',
+  lunchPunchOut: '',
+});
 
-// Get current datetime in datetime-local format
-function nowDatetimeLocal(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+const defaultAssisTech = (): AssisTech => ({
+  name: '',
+  workPunchIn: '',
+  workPunchOut: '',
+  lunchPunchIn: '',
+  lunchPunchOut: '',
+});
 
 export default function ReportForm() {
-  const [form, setForm] = useState<FormState>(initialFormState);
-
-  // Punch state: 'idle' | 'in' | 'out'
-  const [punchState, setPunchState] = useState<'idle' | 'in' | 'out'>('idle');
-  const [checkInDT, setCheckInDT] = useState<string>('');
-  const [checkOutDT, setCheckOutDT] = useState<string>('');
-
-  // Multi-photo state with labels
-  const [photos, setPhotos] = useState<PhotoEntry[]>([]);
-
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [technicians, setTechnicians] = useState<TechnicianData[]>([defaultTechnician()]);
+  const [assisTechs, setAssisTechs] = useState<AssisTech[]>([]);
+  const [signature, setSignature] = useState<string>('');
+  const [isDrawing, setIsDrawing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastPos = useRef<{ x: number; y: number } | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
+  // ── Form field handlers ────────────────────────────────────────────────────
+  function handleChange(field: keyof FormData, value: string) {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }
 
-  const handlePunch = () => {
-    const now = nowDatetimeLocal();
-    if (punchState === 'idle') {
-      setCheckInDT(now);
-      setCheckOutDT('');
-      setPunchState('in');
-    } else if (punchState === 'in') {
-      setCheckOutDT(now);
-      setPunchState('out');
+  // ── Technician handlers ────────────────────────────────────────────────────
+  function updateTechnician(index: number, field: keyof TechnicianData, value: string) {
+    setTechnicians(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
+  }
+
+  function addTechnician() {
+    setTechnicians(prev => [...prev, defaultTechnician()]);
+  }
+
+  function removeTechnician(index: number) {
+    setTechnicians(prev => prev.filter((_, i) => i !== index));
+  }
+
+  // ── ASSIS Tech handlers ────────────────────────────────────────────────────
+  function updateAssisTech(index: number, field: keyof AssisTech, value: string) {
+    setAssisTechs(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
+  }
+
+  function addAssisTech() {
+    setAssisTechs(prev => [...prev, defaultAssisTech()]);
+  }
+
+  function removeAssisTech(index: number) {
+    setAssisTechs(prev => prev.filter((_, i) => i !== index));
+  }
+
+  // ── Signature canvas ───────────────────────────────────────────────────────
+  function getPos(e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) {
+    const rect = canvas.getBoundingClientRect();
+    if ('touches' in e) {
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top,
+      };
     }
-  };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+  function startDrawing(e: React.MouseEvent | React.TouchEvent) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.preventDefault();
+    setIsDrawing(true);
+    lastPos.current = getPos(e, canvas);
+  }
 
-    const newEntries: PhotoEntry[] = files.map(f => ({
-      file: f,
-      previewUrl: URL.createObjectURL(f),
-      label: '',
-    }));
+  function draw(e: React.MouseEvent | React.TouchEvent) {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.preventDefault();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e, canvas);
+    ctx.beginPath();
+    ctx.moveTo(lastPos.current!.x, lastPos.current!.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = '#f5c518';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    lastPos.current = pos;
+  }
 
-    setPhotos(prev => [...prev, ...newEntries]);
+  function stopDrawing() {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      setSignature(canvas.toDataURL('image/png'));
+    }
+  }
 
-    // Reset input so same files can be re-added if needed
-    if (photoInputRef.current) photoInputRef.current.value = '';
-  };
+  function clearSignature() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignature('');
+  }
 
-  const removePhoto = (index: number) => {
-    URL.revokeObjectURL(photos[index].previewUrl);
-    setPhotos(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const updatePhotoLabel = (index: number, label: string) => {
-    setPhotos(prev => prev.map((p, i) => i === index ? { ...p, label } : p));
-  };
-
-  const handleGeneratePDF = async () => {
+  // ── PDF generation ─────────────────────────────────────────────────────────
+  async function handleGeneratePDF() {
     setIsGenerating(true);
     try {
-      // Convert all photos to base64
-      const photoData = await Promise.all(
-        photos.map(
-          entry =>
-            new Promise<{ data: string; label: string }>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = ev => resolve({
-                data: ev.target?.result as string,
-                label: entry.label,
-              });
-              reader.onerror = reject;
-              reader.readAsDataURL(entry.file);
-            })
-        )
-      );
-
-      const reportData: ReportData = {
-        checkIn: toDisplayTime(checkInDT),
-        checkOut: toDisplayTime(checkOutDT),
-        ...form,
-        sitePhotos: photoData.length > 0 ? photoData : undefined,
-      };
-      generateReportPDF(reportData);
+      generatePDF({
+        ...formData,
+        technicians,
+        assisTechs,
+        signature: signature || undefined,
+      });
     } catch (err) {
       console.error('PDF generation failed:', err);
-      alert('Failed to generate PDF. Please try again.');
     } finally {
-      setTimeout(() => setIsGenerating(false), 1000);
+      setIsGenerating(false);
     }
-  };
+  }
 
-  const sectionClass = "bg-surface border border-border rounded-lg p-5 mb-4";
-  const labelClass = "block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1";
-  const inputClass = "w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-colors";
-  const textareaClass = `${inputClass} resize-none`;
+  // ── Shared input class ─────────────────────────────────────────────────────
+  const inputClass =
+    'bg-surface border-border text-foreground placeholder:text-muted-foreground focus:border-accent-yellow focus:ring-1 focus:ring-accent-yellow';
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="space-y-8">
 
-      {/* Time & Attendance */}
-      <div className={sectionClass}>
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="w-4 h-4 text-accent-yellow" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Time & Attendance</h2>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end mb-4">
-          {punchState !== 'out' && (
-            <button
-              onClick={handlePunch}
-              className={`px-5 py-2 rounded font-bold text-sm uppercase tracking-wider transition-all ${
-                punchState === 'in'
-                  ? 'bg-destructive text-destructive-foreground hover:opacity-90'
-                  : 'btn-yellow'
-              }`}
-            >
-              {punchState === 'idle' ? '⏱ Punch In' : '⏹ Punch Out'}
-            </button>
-          )}
-          {punchState === 'out' && (
-            <button
-              onClick={() => { setPunchState('idle'); setCheckInDT(''); setCheckOutDT(''); }}
-              className="btn-secondary px-5 py-2 text-sm"
-            >
-              Reset
-            </button>
-          )}
-        </div>
+      {/* ── PROJECT INFORMATION ─────────────────────────────────────────── */}
+      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
+        <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
+          <FileText className="w-5 h-5" />
+          Project Information
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Check In</label>
-            {punchState === 'idle' ? (
-              <div className="text-xs text-muted-foreground italic py-2">Press Punch In to record</div>
-            ) : (
-              <input
-                type="datetime-local"
-                value={checkInDT}
-                onChange={(e) => setCheckInDT(e.target.value)}
-                className={inputClass}
-              />
-            )}
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Date</Label>
+            <Input
+              type="date"
+              value={formData.date}
+              onChange={e => handleChange('date', e.target.value)}
+              className={inputClass}
+            />
           </div>
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Job Name</Label>
+            <Input
+              placeholder="Enter job name"
+              value={formData.jobName}
+              onChange={e => handleChange('jobName', e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Job Number</Label>
+            <Input
+              placeholder="e.g. JOB-2024-001"
+              value={formData.jobNumber}
+              onChange={e => handleChange('jobNumber', e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Location</Label>
+            <Input
+              placeholder="Site address or name"
+              value={formData.location}
+              onChange={e => handleChange('location', e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Weather Conditions</Label>
+            <Input
+              placeholder="e.g. Sunny, Cloudy, Rain"
+              value={formData.weatherConditions}
+              onChange={e => handleChange('weatherConditions', e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Temperature (°F)</Label>
+            <Input
+              type="number"
+              placeholder="e.g. 72"
+              value={formData.temperature}
+              onChange={e => handleChange('temperature', e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </section>
 
-          <div>
-            <label className={labelClass}>Check Out</label>
-            {punchState !== 'out' ? (
-              <div className="text-xs text-muted-foreground italic py-2">
-                {punchState === 'in' ? 'Press Punch Out to record' : 'Press Punch In first'}
-              </div>
-            ) : (
-              <input
-                type="datetime-local"
-                value={checkOutDT}
-                onChange={(e) => setCheckOutDT(e.target.value)}
-                className={inputClass}
-              />
-            )}
-          </div>
+      {/* ── LEAD TECHNICIANS ────────────────────────────────────────────── */}
+      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            Lead Technicians
+          </h2>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addTechnician}
+            className="border-accent-yellow text-accent-yellow hover:bg-accent-yellow hover:text-background gap-1"
+          >
+            <Plus className="w-4 h-4" />
+            Add Tech
+          </Button>
         </div>
-      </div>
 
-      {/* Personnel */}
-      <div className={sectionClass}>
-        <div className="flex items-center gap-2 mb-4">
-          <User className="w-4 h-4 text-accent-yellow" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Personnel</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Project Manager</label>
-            <input
-              type="text"
-              name="projectManager"
-              value={form.projectManager}
-              onChange={handleChange}
-              placeholder="Name"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Location Contact</label>
-            <input
-              type="text"
-              name="locationContact"
-              value={form.locationContact}
-              onChange={handleChange}
-              placeholder="Name"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Lead Technician</label>
-            <input
-              type="text"
-              name="leadTechnician"
-              value={form.leadTechnician}
-              onChange={handleChange}
-              placeholder="Name"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Assis Technician</label>
-            <input
-              type="text"
-              name="assistTech"
-              value={form.assistTech}
-              onChange={handleChange}
-              placeholder="Name"
-              className={inputClass}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Job Details */}
-      <div className={sectionClass}>
-        <div className="flex items-center gap-2 mb-4">
-          <Briefcase className="w-4 h-4 text-accent-yellow" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Job Details</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Job Code</label>
-            <input
-              type="text"
-              name="jobCode"
-              value={form.jobCode}
-              onChange={handleChange}
-              placeholder="e.g. JC-2024-001"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Customer Name</label>
-            <input
-              type="text"
-              name="customerName"
-              value={form.customerName}
-              onChange={handleChange}
-              placeholder="Customer"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Job Location</label>
-            <input
-              type="text"
-              name="jobLocation"
-              value={form.jobLocation}
-              onChange={handleChange}
-              placeholder="Address or site name"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Job Type</label>
-            <input
-              type="text"
-              name="jobType"
-              value={form.jobType}
-              onChange={handleChange}
-              placeholder="e.g. Installation, Repair"
-              className={inputClass}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Job Description */}
-      <div className={sectionClass}>
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-4 h-4 text-accent-yellow" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Job Description</h2>
-        </div>
-        <textarea
-          name="jobDescription"
-          value={form.jobDescription}
-          onChange={handleChange}
-          rows={4}
-          placeholder="Describe the work performed..."
-          className={textareaClass}
-        />
-      </div>
-
-      {/* Completion Status */}
-      <div className={sectionClass}>
-        <div className="flex items-center gap-2 mb-4">
-          <CheckCircle className="w-4 h-4 text-accent-yellow" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Completion Status</h2>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {['Fully Complete', 'Uncompleted', 'Partial', 'Pending Parts', 'Follow-Up Required'].map((status) => (
-            <label key={status} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="completionStatus"
-                value={status}
-                checked={form.completionStatus === status}
-                onChange={handleChange}
-                className="accent-accent-yellow w-4 h-4"
-              />
-              <span className={`text-sm font-medium ${form.completionStatus === status ? 'text-accent-yellow' : 'text-muted-foreground'}`}>
-                {status}
+        {technicians.map((tech, idx) => (
+          <div key={idx} className="rounded-md border border-border bg-background p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-accent-yellow uppercase tracking-wider">
+                Technician {idx + 1}
               </span>
-            </label>
-          ))}
-        </div>
-      </div>
+              {technicians.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeTechnician(idx)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
 
-      {/* Close Out Report */}
-      <div className={sectionClass}>
-        <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-4 h-4 text-accent-yellow" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Close Out Report</h2>
-        </div>
-        <textarea
-          name="closeOutReport"
-          value={form.closeOutReport}
-          onChange={handleChange}
-          rows={4}
-          placeholder="Summary of work completed, issues encountered, recommendations..."
-          className={textareaClass}
-        />
-      </div>
+            <div className="space-y-1">
+              <Label className="text-muted-foreground text-xs uppercase tracking-wider">Name</Label>
+              <Input
+                placeholder="Technician name"
+                value={tech.name}
+                onChange={e => updateTechnician(idx, 'name', e.target.value)}
+                className={inputClass}
+              />
+            </div>
 
-      {/* Site Photos */}
-      <div className={sectionClass}>
-        <div className="flex items-center gap-2 mb-4">
-          <Camera className="w-4 h-4 text-accent-yellow" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Site Photos</h2>
-        </div>
-
-        {/* Upload button */}
-        <div
-          className="border-2 border-dashed border-border rounded-lg p-5 flex flex-col items-center justify-center cursor-pointer hover:border-accent-yellow transition-colors mb-4"
-          onClick={() => photoInputRef.current?.click()}
-        >
-          <ImagePlus className="w-8 h-8 text-muted-foreground mb-2" />
-          <span className="text-sm text-muted-foreground">Click to add photos</span>
-          <span className="text-xs text-muted-foreground mt-1">Multiple images supported</span>
-        </div>
-        <input
-          ref={photoInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={handlePhotoUpload}
-        />
-
-        {/* Photo list with label inputs */}
-        {photos.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {photos.map((entry, index) => (
-              <div key={index} className="flex gap-3 bg-input border border-border rounded-lg p-3">
-                {/* Thumbnail */}
-                <div className="relative flex-shrink-0 w-24 h-24 rounded overflow-hidden border border-border">
-                  <img
-                    src={entry.previewUrl}
-                    alt={`Site photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    onClick={() => removePhoto(index)}
-                    className="absolute top-1 right-1 bg-black/70 hover:bg-destructive text-white rounded-full p-0.5 transition-colors"
-                    aria-label="Remove photo"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-
-                {/* Label input */}
-                <div className="flex flex-col flex-1 justify-center gap-1">
-                  <label className={labelClass}>
-                    Photo {index + 1} — Description / Label
-                  </label>
-                  <input
-                    type="text"
-                    value={entry.label}
-                    onChange={(e) => updatePhotoLabel(index, e.target.value)}
-                    placeholder="e.g. Panel installation, Cable routing..."
-                    className={inputClass}
-                  />
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Punch In</Label>
+                <Input
+                  type="datetime-local"
+                  value={tech.workPunchIn}
+                  onChange={e => updateTechnician(idx, 'workPunchIn', e.target.value)}
+                  className={inputClass}
+                />
               </div>
-            ))}
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Punch Out</Label>
+                <Input
+                  type="datetime-local"
+                  value={tech.workPunchOut}
+                  onChange={e => updateTechnician(idx, 'workPunchOut', e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Lunch Punch In</Label>
+                <Input
+                  type="datetime-local"
+                  value={tech.lunchPunchIn}
+                  onChange={e => updateTechnician(idx, 'lunchPunchIn', e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Lunch Punch Out</Label>
+                <Input
+                  type="datetime-local"
+                  value={tech.lunchPunchOut}
+                  onChange={e => updateTechnician(idx, 'lunchPunchOut', e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+            </div>
           </div>
-        )}
+        ))}
+      </section>
 
-        {photos.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-3">
-            {photos.length} photo{photos.length !== 1 ? 's' : ''} selected
+      {/* ── ASSISTANT TECHNICIANS ───────────────────────────────────────── */}
+      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            ASSIS Techs
+          </h2>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addAssisTech}
+            className="border-accent-yellow text-accent-yellow hover:bg-accent-yellow hover:text-background gap-1"
+          >
+            <Plus className="w-4 h-4" />
+            Add ASSIS Tech
+          </Button>
+        </div>
+
+        {assisTechs.length === 0 && (
+          <p className="text-muted-foreground text-sm italic">
+            No assistant technicians added. Click "Add ASSIS Tech" to add one.
           </p>
         )}
-      </div>
 
-      {/* Generate PDF Button */}
-      <div className="mt-6">
-        <button
+        {assisTechs.map((tech, idx) => (
+          <div key={idx} className="rounded-md border border-border bg-background p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-accent-yellow uppercase tracking-wider">
+                ASSIS Tech {idx + 1}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => removeAssisTech(idx)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-muted-foreground text-xs uppercase tracking-wider">Name</Label>
+              <Input
+                placeholder="Assistant technician name"
+                value={tech.name}
+                onChange={e => updateAssisTech(idx, 'name', e.target.value)}
+                className={inputClass}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Punch In</Label>
+                <Input
+                  type="datetime-local"
+                  value={tech.workPunchIn}
+                  onChange={e => updateAssisTech(idx, 'workPunchIn', e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Punch Out</Label>
+                <Input
+                  type="datetime-local"
+                  value={tech.workPunchOut}
+                  onChange={e => updateAssisTech(idx, 'workPunchOut', e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Lunch Punch In</Label>
+                <Input
+                  type="datetime-local"
+                  value={tech.lunchPunchIn}
+                  onChange={e => updateAssisTech(idx, 'lunchPunchIn', e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Lunch Punch Out</Label>
+                <Input
+                  type="datetime-local"
+                  value={tech.lunchPunchOut}
+                  onChange={e => updateAssisTech(idx, 'lunchPunchOut', e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* ── WORK DETAILS ────────────────────────────────────────────────── */}
+      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
+        <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
+          <FileText className="w-5 h-5" />
+          Work Details
+        </h2>
+
+        <div className="space-y-1">
+          <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Performed</Label>
+          <Textarea
+            placeholder="Describe the work performed today..."
+            value={formData.workPerformed}
+            onChange={e => handleChange('workPerformed', e.target.value)}
+            className={`${inputClass} min-h-[100px]`}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-muted-foreground text-xs uppercase tracking-wider">Materials Used</Label>
+          <Textarea
+            placeholder="List materials used..."
+            value={formData.materialsUsed}
+            onChange={e => handleChange('materialsUsed', e.target.value)}
+            className={`${inputClass} min-h-[80px]`}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-muted-foreground text-xs uppercase tracking-wider">Equipment Used</Label>
+          <Textarea
+            placeholder="List equipment used..."
+            value={formData.equipmentUsed}
+            onChange={e => handleChange('equipmentUsed', e.target.value)}
+            className={`${inputClass} min-h-[80px]`}
+          />
+        </div>
+      </section>
+
+      {/* ── PROJECT STATUS ──────────────────────────────────────────────── */}
+      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
+        <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest">
+          Project Status
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Status</Label>
+            <Select value={formData.workStatus} onValueChange={v => handleChange('workStatus', v)}>
+              <SelectTrigger className={inputClass}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-surface border-border text-foreground">
+                <SelectItem value="Not Started">Not Started</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="On Hold">On Hold</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Percent Complete (%)</Label>
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              placeholder="e.g. 75"
+              value={formData.percentComplete}
+              onChange={e => handleChange('percentComplete', e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── ADDITIONAL NOTES ────────────────────────────────────────────── */}
+      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
+        <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest">
+          Additional Notes
+        </h2>
+        <div className="space-y-1">
+          <Label className="text-muted-foreground text-xs uppercase tracking-wider">Notes</Label>
+          <Textarea
+            placeholder="Any additional notes, observations, or issues..."
+            value={formData.additionalNotes}
+            onChange={e => handleChange('additionalNotes', e.target.value)}
+            className={`${inputClass} min-h-[100px]`}
+          />
+        </div>
+      </section>
+
+      {/* ── SIGNATURE ───────────────────────────────────────────────────── */}
+      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
+            <PenLine className="w-5 h-5" />
+            Signature
+          </h2>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={clearSignature}
+            className="text-muted-foreground hover:text-foreground gap-1"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Clear
+          </Button>
+        </div>
+
+        <div className="signature-container rounded-md overflow-hidden border border-border">
+          <canvas
+            ref={canvasRef}
+            width={532}
+            height={150}
+            className="w-full touch-none cursor-crosshair bg-background"
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+          />
+        </div>
+        <p className="text-muted-foreground text-xs">Sign above using mouse or touch</p>
+      </section>
+
+      {/* ── GENERATE PDF ────────────────────────────────────────────────── */}
+      <div className="flex justify-end pb-4">
+        <Button
+          type="button"
           onClick={handleGeneratePDF}
           disabled={isGenerating}
-          className="btn-yellow w-full py-3 text-base font-bold uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="btn-primary gap-2 px-8 py-3 text-base font-bold uppercase tracking-wider"
         >
           {isGenerating ? (
             <>
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              Generating PDF...
+              <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+              Generating...
             </>
           ) : (
             <>
-              <Download className="w-5 h-5" />
-              Generate Report PDF
+              <FileText className="w-5 h-5" />
+              Generate PDF Report
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

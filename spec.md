@@ -1,12 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Update the SECENG Daily Report form and PDF generator by removing the technician signature field, enabling multi-photo upload with per-photo labels, and renaming the "HELPER" role to "ASSIS TECHNICIAN".
+**Goal:** Fix the PDF generator to remove yellow borders from the header and increase text size throughout the document.
 
 **Planned changes:**
-- Remove the "Technician Signature" field from the report form UI, its state, and all references in the PDF generation logic.
-- Replace the single photo upload input with a multi-photo upload control that allows adding multiple images, each stored individually in state.
-- Add a text input (description/label) for each uploaded photo; include both the image and its label in the generated PDF.
-- Replace all occurrences of "HELPER" with "ASSIS TECHNICIAN" in the form UI and PDF generator.
+- Remove any yellow border, outline, or yellow-colored rectangle/line drawn in the PDF header section
+- Increase font sizes for all text elements in the PDF (headers, field labels, field values, section titles, footer) while preserving the relative text hierarchy
 
-**User-visible outcome:** Users can upload multiple photos with individual labels in the report form, no longer see a signature field, and the generated PDF reflects all changes including the renamed "ASSIS TECHNICIAN" role.
+**User-visible outcome:** Generated PDFs will have a clean header without yellow borders, and all text will be larger and more readable.

@@ -1,83 +1,36 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove Technician Signature, Multi-Photo Upload with Labels, Rename Helper Role",
+  "title": "Remove yellow borders from PDF header and increase PDF text size",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Remove the 'Technician Signature' field entirely from the report form and PDF generation logic",
+      "summary": "Remove yellow border or yellow-colored rectangle/line from the PDF header section",
       "acceptanceCriteria": [
-        "The 'Technician Signature' field no longer appears in the report form UI.",
-        "No signature section appears in the generated PDF.",
-        "No residual state variables or handlers for the signature field remain in the codebase."
+        "The generated PDF header contains no yellow borders, outlines, or yellow-colored strokes/rectangles.",
+        "The rest of the PDF layout and content remains intact."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Remove the technician signature input field from the form UI, including its state variable, onChange handler, and any associated JSX elements. Ensure no references to the signature field remain in the component."
-        },
-        {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Remove all references to the technician signature field from the PDF generation logic, including any signature rendering sections, layout calculations, or data processing related to the signature."
+          "description": "Remove any yellow-colored drawing commands (setDrawColor, setFillColor with yellow RGB/hex values, rect calls with yellow stroke/fill) that render borders, rectangles, or lines in the header section of the PDF. Locate the header rendering logic and eliminate yellow color specifications while preserving other header elements (text, logo, layout structure)."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Replace single photo upload with multi-photo upload control allowing multiple image selection",
+      "summary": "Increase font size for all text elements throughout the PDF document",
       "acceptanceCriteria": [
-        "The user can select and upload more than one photo.",
-        "Each uploaded photo is stored and displayed individually.",
-        "Previously uploaded photos remain when a new one is added."
+        "All text elements in the generated PDF are rendered at a larger font size than before.",
+        "The relative hierarchy between headings, labels, and body text is preserved.",
+        "No text overflows or is clipped due to the size increase."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Replace the single photo upload input with a multi-photo upload control. Change the photo state from a single value to an array that can hold multiple images. Update the file input to accept multiple files and add a handler that appends new photos to the existing array. Display all uploaded photos in a list or grid with individual previews."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Add description/label text input for each uploaded photo, storing labels with photos and including them in PDF",
-      "acceptanceCriteria": [
-        "Each photo in the upload list has its own text input for a description or label.",
-        "The label is visually associated with its corresponding photo in the form UI.",
-        "The generated PDF displays each photo with its label rendered beneath or beside it."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Update the photo state structure to store both the image data and an associated label for each photo (e.g., as an array of objects with image and label properties). Add a text input field next to each photo preview that allows the user to enter or edit the label for that specific photo. Wire up onChange handlers to update the label in state when the user types."
-        },
         {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Update the PDF generation logic to accept and render multiple photos with their labels. For each photo in the array, display the image and render its associated label text beneath or beside it in the PDF layout. Adjust spacing and page breaks as needed to accommodate multiple labeled photos."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Replace all occurrences of 'HELPER' label with 'ASSIS TECHNICIAN' in form UI and PDF",
-      "acceptanceCriteria": [
-        "The label 'HELPER' no longer appears anywhere in the form UI or generated PDF.",
-        "The label 'ASSIS TECHNICIAN' appears in every place 'HELPER' previously appeared."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Find and replace all string literals and labels containing 'HELPER' with 'ASSIS TECHNICIAN' in the form UI, including field labels, dropdown options, and any displayed text."
-        },
-        {
-          "path": "frontend/src/utils/pdfGenerator.ts",
-          "operation": "modify",
-          "description": "Find and replace all string literals and labels containing 'HELPER' with 'ASSIS TECHNICIAN' in the PDF generation logic, ensuring the new label appears in all relevant sections of the generated report."
+          "description": "Increase all setFontSize() calls throughout the PDF generation logic. Apply consistent scaling (e.g., +2 to +4 points) to headers, field labels, field values, section titles, and footer text while maintaining the existing hierarchy (headers larger than body text). Verify text fits within page margins and does not cause line breaks or clipping issues after the increase."
         }
       ]
     }

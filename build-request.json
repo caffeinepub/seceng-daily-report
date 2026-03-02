@@ -1,89 +1,53 @@
 {
   "kind": "build_request",
-  "title": "Remove Technician Signature, Multi-Photo Upload with Labels, Rename Helper Role",
+  "title": "Remove yellow borders from PDF header and increase PDF text size",
   "projectName": "SECENG Daily Report",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove the 'Technician Signature' field entirely from the report form (ReportForm.tsx) — remove its UI input, any associated state, and all references to it in the PDF generation logic (pdfGenerator.ts).",
+      "text": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), remove any yellow border or yellow-colored rectangle/line drawn at the top header section of the generated PDF document.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Remove 'Technician Signature'."
+          "Remove yellow borders at the header of pdf."
         ]
       },
       "acceptanceCriteria": [
-        "The 'Technician Signature' field no longer appears in the report form UI.",
-        "No signature section appears in the generated PDF.",
-        "No residual state variables or handlers for the signature field remain in the codebase."
+        "The generated PDF header contains no yellow borders, outlines, or yellow-colored strokes/rectangles.",
+        "The rest of the PDF layout and content remains intact."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Replace the single photo upload input in ReportForm.tsx with a multi-photo upload control that allows the user to select and add multiple images. Each uploaded photo should be stored as an individual entry in state.",
+      "text": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), increase the font size for all text rendered throughout the entire PDF document — including headers, field labels, field values, section titles, and footer text — so the document is more readable.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Let user upload multiple pictures."
+          "Increase size of text for the entire pdf document"
         ]
       },
       "acceptanceCriteria": [
-        "The user can select and upload more than one photo.",
-        "Each uploaded photo is stored and displayed individually.",
-        "Previously uploaded photos remain when a new one is added."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "For each uploaded photo in the multi-photo list, provide a text input field so the user can enter a description or label for that specific photo. Store the label alongside the photo in state and include both the image and its label in the generated PDF report.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Add discription or label to each picture."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Each photo in the upload list has its own text input for a description or label.",
-        "The label is visually associated with its corresponding photo in the form UI.",
-        "The generated PDF displays each photo with its label rendered beneath or beside it."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Find all occurrences of the label 'HELPER' in the form UI (ReportForm.tsx) and the PDF generator (pdfGenerator.ts) and replace them with 'ASSIS TECHNICIAN'.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Replace 'HELPER' with 'ASSIS TECHNICIAN'."
-        ]
-      },
-      "acceptanceCriteria": [
-        "The label 'HELPER' no longer appears anywhere in the form UI or generated PDF.",
-        "The label 'ASSIS TECHNICIAN' appears in every place 'HELPER' previously appeared."
+        "All text elements in the generated PDF are rendered at a larger font size than before.",
+        "The relative hierarchy between headings, labels, and body text is preserved.",
+        "No text overflows or is clipped due to the size increase."
       ]
     }
   ],
   "constraints": [
-    "Do not alter any immutable frontend paths (useInternetIdentity.ts, useActor.ts, main.tsx, components/ui).",
-    "All changes are frontend-only; do not modify backend/main.mo."
+    "Only modify frontend/src/utils/pdfGenerator.ts for these changes.",
+    "Do not alter any other PDF structure, data fields, or layout logic beyond what is required."
   ],
   "nonGoals": [
-    "Adding backend storage or persistence for uploaded photos.",
-    "Changing any other field labels or form sections not mentioned in this request.",
-    "Redesigning the overall visual theme or layout of the app."
+    "Changing colors or styles elsewhere in the app UI.",
+    "Adding or removing any data fields from the PDF.",
+    "Modifying the backend."
   ],
   "imageRequirements": {
     "required": [],

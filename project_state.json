@@ -1,40 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project involves a technician/field service app with photo upload and job tracking features.",
+  "summary": "PDF document generation project with ongoing visual adjustments.",
   "architectural_notes": [],
   "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-remove-the-technician-signature-field-entirely-from-the-report-form-reportform-tsx-remove-its-ui-input-any-associated-state-and-all-references-to-it-in-the-pdf-generation-logic-pdfgenerator-ts",
-      "title": "Remove the 'Technician Signature' field entirely from the report form (ReportForm.tsx) — remove its UI input, any associated state, and all references to it in the PDF generation logic (pdfGenerator.ts).",
+      "id": "feature-in-the-pdf-generator-utility-frontend-src-utils-pdfgenerator-ts-remove-any-yellow-border-or-yellow-colored-rectangle-line-drawn-at-the-top-header-section-of-the-generated-pdf-document",
+      "title": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), remove any yellow border or yellow-colored rectangle/line drawn at the top header section of the generated PDF document.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-replace-the-single-photo-upload-input-in-reportform-tsx-with-a-multi-photo-upload-control-that-allows-the-user-to-select-and-add-multiple-images-each-uploaded-photo-should-be-stored-as-an-individual-entry-in-state",
-      "title": "Replace the single photo upload input in ReportForm.tsx with a multi-photo upload control that allows the user to select and add multiple images. Each uploaded photo should be stored as an individual entry in state.",
+      "id": "feature-in-the-pdf-generator-utility-frontend-src-utils-pdfgenerator-ts-increase-the-font-size-for-all-text-rendered-throughout-the-entire-pdf-document-including-headers-field-labels-field-values-section-titles-and-footer-text-so-the-document-is-more-readable",
+      "title": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), increase the font size for all text rendered throughout the entire PDF document — including headers, field labels, field values, section titles, and footer text — so the document is more readable.",
       "reqIds": [
         "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-for-each-uploaded-photo-in-the-multi-photo-list-provide-a-text-input-field-so-the-user-can-enter-a-description-or-label-for-that-specific-photo-store-the-label-alongside-the-photo-in-state-and-include-both-the-image-and-its-label-in-the-generated-pdf-report",
-      "title": "For each uploaded photo in the multi-photo list, provide a text input field so the user can enter a description or label for that specific photo. Store the label alongside the photo in state and include both the image and its label in the generated PDF report.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-find-all-occurrences-of-the-label-helper-in-the-form-ui-reportform-tsx-and-the-pdf-generator-pdfgenerator-ts-and-replace-them-with-assis-technician",
-      "title": "Find all occurrences of the label 'HELPER' in the form UI (ReportForm.tsx) and the PDF generator (pdfGenerator.ts) and replace them with 'ASSIS TECHNICIAN'.",
-      "reqIds": [
-        "REQ-4"
       ],
       "version": 1
     }
@@ -42,25 +26,13 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Remove 'Technician Signature' field",
+      "summary": "Remove yellow borders at the header of PDF",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Allow user to upload multiple pictures",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Add description or label to each uploaded picture",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Replace label 'HELPER' with 'ASSIS TECHNICIAN'",
+      "summary": "Increase text size for the entire PDF document",
       "reqIds": [],
       "status": "pending"
     }

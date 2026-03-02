@@ -1,399 +1,325 @@
-export interface PhotoData {
-  data: string;
-  label: string;
+// PDF generation utility using jsPDF (loaded via CDN in index.html)
+
+export interface TechnicianData {
+  name: string;
+  workPunchIn: string;
+  workPunchOut: string;
+  lunchPunchIn: string;
+  lunchPunchOut: string;
+}
+
+export interface AssisTech {
+  name: string;
+  workPunchIn: string;
+  workPunchOut: string;
+  lunchPunchIn: string;
+  lunchPunchOut: string;
 }
 
 export interface ReportData {
-  checkIn: string;
-  checkOut: string;
-  projectManager: string;
-  locationContact: string;
-  leadTechnician: string;
-  assistTech: string;
-  jobCode: string;
-  customerName: string;
-  jobLocation: string;
-  jobType: string;
-  jobDescription: string;
-  completionStatus: 'Fully Complete' | 'Uncompleted' | 'Partial' | 'Pending Parts' | 'Follow-Up Required' | string;
-  closeOutReport: string;
-  sitePhotos?: PhotoData[];
+  // Header info
+  date: string;
+  jobName: string;
+  jobNumber: string;
+  location: string;
+  weatherConditions: string;
+  temperature: string;
+
+  // Personnel
+  technicians: TechnicianData[];
+  assisTechs?: AssisTech[];
+
+  // Work details
+  workPerformed: string;
+  materialsUsed: string;
+  equipmentUsed: string;
+
+  // Status
+  workStatus: string;
+  percentComplete: string;
+
+  // Notes
+  additionalNotes: string;
+
+  // Signature
+  signature?: string;
 }
 
-declare const window: Window & {
-  jspdf?: { jsPDF: new (...args: unknown[]) => jsPDFInstance };
-};
-
-interface jsPDFInstance {
-  internal: {
-    pageSize: { getWidth: () => number; getHeight: () => number };
-    getNumberOfPages: () => number;
-  };
-  setPage: (page: number) => void;
-  addPage: () => void;
-  setFillColor: (r: number, g: number, b: number) => void;
-  setTextColor: (r: number, g: number, b: number) => void;
-  setDrawColor: (r: number, g: number, b: number) => void;
-  setFont: (font: string, style?: string) => void;
-  setFontSize: (size: number) => void;
-  setLineWidth: (width: number) => void;
-  rect: (x: number, y: number, w: number, h: number, style?: string) => void;
-  line: (x1: number, y1: number, x2: number, y2: number) => void;
-  text: (text: string | string[], x: number, y: number, options?: Record<string, unknown>) => void;
-  addImage: (imageData: string, format: string, x: number, y: number, w: number, h: number) => void;
-  getImageProperties: (imageData: string) => { width: number; height: number };
-  save: (filename: string) => void;
-  splitTextToSize: (text: string, maxWidth: number) => string[];
-}
-
-function getJsPDF(): new (...args: unknown[]) => jsPDFInstance {
-  const w = window as typeof window & { jspdf?: { jsPDF: new (...args: unknown[]) => jsPDFInstance } };
-  if (w.jspdf?.jsPDF) return w.jspdf.jsPDF;
-  throw new Error('jsPDF not loaded. Make sure the CDN script is included in index.html.');
-}
-
-// Colors
-const C = {
-  headerBg: [20, 20, 20] as [number, number, number],
-  headerText: [255, 204, 0] as [number, number, number],
-  headerSub: [180, 180, 180] as [number, number, number],
-  sectionBg: [30, 30, 30] as [number, number, number],
-  sectionText: [255, 204, 0] as [number, number, number],
-  labelText: [150, 150, 150] as [number, number, number],
-  valueText: [230, 230, 230] as [number, number, number],
-  divider: [60, 60, 60] as [number, number, number],
-  pageBg: [15, 15, 15] as [number, number, number],
-  footerBg: [20, 20, 20] as [number, number, number],
-  footerText: [120, 120, 120] as [number, number, number],
-  accent: [255, 204, 0] as [number, number, number],
-  white: [255, 255, 255] as [number, number, number],
-  cardBg: [22, 22, 22] as [number, number, number],
-  cardBorder: [45, 45, 45] as [number, number, number],
-};
-
-function drawPageBackground(doc: jsPDFInstance, pageWidth: number, pageHeight: number) {
-  doc.setFillColor(...C.pageBg);
-  doc.rect(0, 0, pageWidth, pageHeight, 'F');
-}
-
-function drawHeader(doc: jsPDFInstance, pageWidth: number) {
-  doc.setFillColor(...C.headerBg);
-  doc.rect(0, 0, pageWidth, 46, 'F');
-
-  doc.setFillColor(...C.accent);
-  doc.rect(0, 0, 4, 46, 'F');
-
-  doc.setFillColor(...C.accent);
-  doc.rect(0, 46, pageWidth, 1.5, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(...C.headerText);
-  doc.text('SECURITY ENGINEERING INC.', pageWidth / 2, 18, { align: 'center' });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(...C.headerSub);
-  doc.text('DAILY  FIELD  REPORT', pageWidth / 2, 29, { align: 'center' });
-
-  const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(...C.footerText);
-  doc.text(`Generated: ${dateStr}`, pageWidth / 2, 39, { align: 'center' });
-}
-
-function drawFooter(doc: jsPDFInstance, pageWidth: number, pageHeight: number, pageNum: number, totalPages: number) {
-  doc.setFillColor(...C.footerBg);
-  doc.rect(0, pageHeight - 14, pageWidth, 14, 'F');
-
-  doc.setFillColor(...C.accent);
-  doc.rect(0, pageHeight - 14, pageWidth, 1, 'F');
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(...C.footerText);
-  doc.text('Security Engineering Inc. — Confidential Field Report', 12, pageHeight - 5);
-  doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - 12, pageHeight - 5, { align: 'right' });
-}
-
-function drawSectionHeader(doc: jsPDFInstance, label: string, y: number, pageWidth: number): number {
-  const margin = 10;
-
-  doc.setFillColor(...C.sectionBg);
-  doc.rect(margin, y, pageWidth - margin * 2, 9, 'F');
-
-  doc.setFillColor(...C.accent);
-  doc.rect(margin, y, 3, 9, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...C.sectionText);
-  doc.text(label.toUpperCase(), margin + 7, y + 6);
-
-  return y + 13;
-}
-
-function drawDivider(doc: jsPDFInstance, y: number, pageWidth: number): number {
-  doc.setDrawColor(...C.divider);
-  doc.setLineWidth(0.4);
-  doc.line(10, y, pageWidth - 10, y);
-  return y + 5;
-}
-
-function drawCardBackground(doc: jsPDFInstance, x: number, y: number, w: number, h: number) {
-  doc.setFillColor(...C.cardBg);
-  doc.rect(x, y, w, h, 'F');
-  doc.setDrawColor(...C.cardBorder);
-  doc.setLineWidth(0.3);
-  doc.rect(x, y, w, h, 'S');
-}
-
-function drawStackedField(
-  doc: jsPDFInstance,
-  label: string,
-  value: string,
-  x: number,
-  y: number,
-  contentWidth: number,
-  isLast: boolean,
-  pageWidth: number
-): number {
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.setTextColor(...C.labelText);
-  doc.text(label.toUpperCase(), x, y);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...C.valueText);
-  const lines = doc.splitTextToSize(value || '—', contentWidth - 6);
-  doc.text(lines, x, y + 5);
-
-  const fieldBottom = y + 5 + lines.length * 4.8 + 4;
-
-  if (!isLast) {
-    doc.setDrawColor(...C.divider);
-    doc.setLineWidth(0.25);
-    doc.line(x, fieldBottom, x + contentWidth - 4, fieldBottom);
-    return fieldBottom + 5;
+function formatDateTime(dateTimeStr: string): string {
+  if (!dateTimeStr) return 'N/A';
+  try {
+    const date = new Date(dateTimeStr);
+    return date.toLocaleString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return dateTimeStr;
   }
-
-  return fieldBottom;
 }
 
-export function generateReportPDF(data: ReportData): void {
-  const JsPDF = getJsPDF();
-  const doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+function formatDate(dateStr: string): string {
+  if (!dateStr) return 'N/A';
+  try {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return dateStr;
+  }
+}
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 10;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getJsPDF(): any {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any;
+  if (w.jspdf && w.jspdf.jsPDF) return w.jspdf.jsPDF;
+  if (w.jsPDF) return w.jsPDF;
+  throw new Error('jsPDF not loaded');
+}
+
+export function generatePDF(data: ReportData): void {
+  const jsPDF = getJsPDF();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' }) as any;
+
+  const pageWidth = 612;
+  const pageHeight = 792;
+  const margin = 40;
   const contentWidth = pageWidth - margin * 2;
-  const headerH = 50;
-  const footerH = 16;
-  const maxY = pageHeight - footerH;
-  const fieldX = margin + 4;
-  const fieldW = contentWidth - 4;
+  let y = margin;
 
-  let y = headerH;
+  // Colors
+  const darkGray = [30, 30, 30];
+  const medGray = [60, 60, 60];
+  const lightGray = [200, 200, 200];
+  const accentYellow = [245, 197, 24];
+  const white = [255, 255, 255];
+  const offWhite = [245, 245, 245];
 
-  drawPageBackground(doc, pageWidth, pageHeight);
-  drawHeader(doc, pageWidth);
-
-  const ensureSpace = (needed: number): number => {
-    if (y + needed > maxY) {
+  function checkPageBreak(neededHeight: number) {
+    if (y + neededHeight > pageHeight - margin) {
       doc.addPage();
-      drawPageBackground(doc, pageWidth, pageHeight);
-      drawHeader(doc, pageWidth);
-      y = headerH;
-    }
-    return y;
-  };
-
-  // ── TIME & ATTENDANCE ──────────────────────────────────────────────────────
-  y = ensureSpace(55);
-  y = drawSectionHeader(doc, 'Time & Attendance', y, pageWidth);
-
-  const taCardY = y;
-  const taCardH = 30;
-  drawCardBackground(doc, margin, taCardY, contentWidth, taCardH);
-  y = taCardY + 5;
-
-  y = drawStackedField(doc, 'Check In', data.checkIn, fieldX, y, fieldW, false, pageWidth);
-  y = drawStackedField(doc, 'Check Out', data.checkOut, fieldX, y, fieldW, true, pageWidth);
-
-  y = taCardY + taCardH + 4;
-  y = drawDivider(doc, y, pageWidth);
-
-  // ── PERSONNEL ─────────────────────────────────────────────────────────────
-  y = ensureSpace(70);
-  y = drawSectionHeader(doc, 'Personnel', y, pageWidth);
-
-  const pCardY = y;
-  const pCardH = 58;
-  drawCardBackground(doc, margin, pCardY, contentWidth, pCardH);
-  y = pCardY + 5;
-
-  y = drawStackedField(doc, 'Project Manager', data.projectManager, fieldX, y, fieldW, false, pageWidth);
-  y = drawStackedField(doc, 'Location Contact', data.locationContact, fieldX, y, fieldW, false, pageWidth);
-  y = drawStackedField(doc, 'Lead Technician', data.leadTechnician, fieldX, y, fieldW, false, pageWidth);
-  y = drawStackedField(doc, 'Assis Technician', data.assistTech, fieldX, y, fieldW, true, pageWidth);
-
-  y = pCardY + pCardH + 4;
-  y = drawDivider(doc, y, pageWidth);
-
-  // ── JOB DETAILS ───────────────────────────────────────────────────────────
-  y = ensureSpace(20);
-  y = drawSectionHeader(doc, 'Job Details', y, pageWidth);
-
-  const descLines = doc.splitTextToSize(data.jobDescription || '—', fieldW - 6);
-  const descFieldH = 5 + descLines.length * 4.8 + 4;
-  const jdCardH = 14 * 4 + descFieldH + 10;
-
-  y = ensureSpace(jdCardH + 20);
-  const jdActualCardY = y;
-  drawCardBackground(doc, margin, jdActualCardY, contentWidth, jdCardH);
-  y = jdActualCardY + 5;
-
-  y = drawStackedField(doc, 'Job Code', data.jobCode, fieldX, y, fieldW, false, pageWidth);
-  y = drawStackedField(doc, 'Customer Name', data.customerName, fieldX, y, fieldW, false, pageWidth);
-  y = drawStackedField(doc, 'Job Location', data.jobLocation, fieldX, y, fieldW, false, pageWidth);
-  y = drawStackedField(doc, 'Job Type', data.jobType, fieldX, y, fieldW, false, pageWidth);
-  y = drawStackedField(doc, 'Job Description', data.jobDescription, fieldX, y, fieldW, true, pageWidth);
-
-  y = jdActualCardY + jdCardH + 4;
-  y = drawDivider(doc, y, pageWidth);
-
-  // ── COMPLETION STATUS ─────────────────────────────────────────────────────
-  y = ensureSpace(35);
-  y = drawSectionHeader(doc, 'Completion Status', y, pageWidth);
-
-  const csCardY = y;
-  const csCardH = 18;
-  drawCardBackground(doc, margin, csCardY, contentWidth, csCardH);
-  y = csCardY + 5;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.setTextColor(...C.labelText);
-  doc.text('STATUS', fieldX, y);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(...C.accent);
-  doc.text((data.completionStatus || '—').toUpperCase(), fieldX, y + 7);
-
-  y = csCardY + csCardH + 4;
-  y = drawDivider(doc, y, pageWidth);
-
-  // ── CLOSE OUT REPORT ──────────────────────────────────────────────────────
-  y = ensureSpace(35);
-  y = drawSectionHeader(doc, 'Close Out Report', y, pageWidth);
-
-  const corLines = doc.splitTextToSize(data.closeOutReport || '—', contentWidth - 10);
-  const corContentH = corLines.length * 5 + 8;
-  y = ensureSpace(corContentH + 10);
-
-  const corCardY = y;
-  drawCardBackground(doc, margin, corCardY, contentWidth, corContentH);
-  y = corCardY + 5;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...C.valueText);
-  doc.text(corLines, fieldX, y);
-  y = corCardY + corContentH + 4;
-
-  y = drawDivider(doc, y, pageWidth);
-
-  // ── SITE PHOTOS ───────────────────────────────────────────────────────────
-  if (data.sitePhotos && data.sitePhotos.length > 0) {
-    y = ensureSpace(25);
-    y = drawSectionHeader(doc, 'Site Photos', y, pageWidth);
-
-    for (let i = 0; i < data.sitePhotos.length; i++) {
-      const photo = data.sitePhotos[i];
-      const imgData = photo.data;
-      const photoLabel = photo.label;
-
-      try {
-        const props = doc.getImageProperties(imgData);
-        const maxImgWidth = contentWidth - 6;
-        const aspectRatio = props.height / props.width;
-        const imgW = maxImgWidth;
-        const imgH = imgW * aspectRatio;
-
-        // Calculate label caption height
-        const captionLines = photoLabel
-          ? doc.splitTextToSize(photoLabel, contentWidth - 10)
-          : [];
-        const captionH = captionLines.length > 0 ? captionLines.length * 4.5 + 8 : 0;
-
-        // Ensure enough space for photo header + image + caption
-        const neededH = Math.min(imgH, maxY - headerH - 10) + 14 + captionH;
-        y = ensureSpace(neededH);
-
-        // Photo number header card
-        const photoLabelH = 9;
-        drawCardBackground(doc, margin, y, contentWidth, photoLabelH);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(...C.labelText);
-        doc.text(`PHOTO ${i + 1} OF ${data.sitePhotos.length}`, fieldX, y + 6);
-        y += photoLabelH + 2;
-
-        // Clamp image height to available space
-        const availH = maxY - y - captionH - 10;
-        const renderH = Math.min(imgH, availH);
-        const renderW = renderH / aspectRatio;
-
-        // Thin border around image
-        doc.setDrawColor(...C.cardBorder);
-        doc.setLineWidth(0.4);
-        doc.rect(margin, y, renderW + 3, renderH + 3, 'S');
-
-        doc.addImage(imgData, 'JPEG', margin + 1.5, y + 1.5, renderW, renderH);
-        y += renderH + 5;
-
-        // Photo caption / label below image
-        if (captionLines.length > 0) {
-          const captionCardY = y;
-          drawCardBackground(doc, margin, captionCardY, contentWidth, captionH);
-
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(6.5);
-          doc.setTextColor(...C.labelText);
-          doc.text('DESCRIPTION', fieldX, captionCardY + 5);
-
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(8.5);
-          doc.setTextColor(...C.valueText);
-          doc.text(captionLines, fieldX, captionCardY + 10);
-
-          y += captionH + 3;
-        }
-
-        y += 5;
-
-        if (i < data.sitePhotos.length - 1) {
-          y = drawDivider(doc, y, pageWidth);
-        }
-      } catch {
-        // Skip images that fail to load
-      }
+      y = margin;
     }
   }
 
-  // ── Finalize: add footers to all pages ────────────────────────────────────
+  function drawSectionHeader(title: string) {
+    checkPageBreak(30);
+    doc.setFillColor(...darkGray);
+    doc.rect(margin, y, contentWidth, 24, 'F');
+    doc.setFillColor(...accentYellow);
+    doc.rect(margin, y, 4, 24, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(...white);
+    doc.text(title.toUpperCase(), margin + 12, y + 16);
+    y += 30;
+  }
+
+  function drawField(label: string, value: string, x: number, fieldWidth: number) {
+    checkPageBreak(40);
+    doc.setFillColor(...offWhite);
+    doc.rect(x, y, fieldWidth, 36, 'F');
+    doc.setDrawColor(...lightGray);
+    doc.rect(x, y, fieldWidth, 36, 'S');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...medGray);
+    doc.text(label.toUpperCase(), x + 6, y + 13);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(...darkGray);
+    const lines = doc.splitTextToSize(value || 'N/A', fieldWidth - 12);
+    doc.text(lines[0] || 'N/A', x + 6, y + 28);
+    y += 42;
+  }
+
+  function drawTwoFields(
+    label1: string, value1: string,
+    label2: string, value2: string
+  ) {
+    checkPageBreak(40);
+    const halfWidth = (contentWidth - 8) / 2;
+    const x1 = margin;
+    const x2 = margin + halfWidth + 8;
+
+    doc.setFillColor(...offWhite);
+    doc.rect(x1, y, halfWidth, 36, 'F');
+    doc.setDrawColor(...lightGray);
+    doc.rect(x1, y, halfWidth, 36, 'S');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...medGray);
+    doc.text(label1.toUpperCase(), x1 + 6, y + 13);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(...darkGray);
+    doc.text(value1 || 'N/A', x1 + 6, y + 28);
+
+    doc.setFillColor(...offWhite);
+    doc.rect(x2, y, halfWidth, 36, 'F');
+    doc.setDrawColor(...lightGray);
+    doc.rect(x2, y, halfWidth, 36, 'S');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...medGray);
+    doc.text(label2.toUpperCase(), x2 + 6, y + 13);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(...darkGray);
+    doc.text(value2 || 'N/A', x2 + 6, y + 28);
+
+    y += 42;
+  }
+
+  function drawTextArea(label: string, value: string) {
+    const lines = doc.splitTextToSize(value || 'N/A', contentWidth - 12);
+    const boxHeight = Math.max(52, lines.length * 15 + 24);
+    checkPageBreak(boxHeight + 8);
+
+    doc.setFillColor(...offWhite);
+    doc.rect(margin, y, contentWidth, boxHeight, 'F');
+    doc.setDrawColor(...lightGray);
+    doc.rect(margin, y, contentWidth, boxHeight, 'S');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...medGray);
+    doc.text(label.toUpperCase(), margin + 6, y + 13);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(...darkGray);
+    doc.text(lines, margin + 6, y + 28);
+    y += boxHeight + 6;
+  }
+
+  // ── HEADER ──────────────────────────────────────────────────────────────────
+  doc.setFillColor(...darkGray);
+  doc.rect(0, 0, pageWidth, 70, 'F');
+  // No yellow border/bar in the header
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(21);
+  doc.setTextColor(...white);
+  doc.text('SECURITY ENGINEERING INC.', margin, 32);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(13);
+  doc.setTextColor(...accentYellow);
+  doc.text('DAILY FIELD REPORT', margin, 54);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(...lightGray);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin, 54, { align: 'right' });
+
+  y = 90;
+
+  // ── PROJECT INFORMATION ──────────────────────────────────────────────────────
+  drawSectionHeader('Project Information');
+  drawField('Date', formatDate(data.date), margin, contentWidth);
+  drawTwoFields('Job Name', data.jobName, 'Job Number', data.jobNumber);
+  drawTwoFields('Location', data.location, 'Weather Conditions', data.weatherConditions);
+  drawField('Temperature', data.temperature ? `${data.temperature}°F` : 'N/A', margin, contentWidth);
+
+  // ── LEAD TECHNICIANS ────────────────────────────────────────────────────────
+  drawSectionHeader('Lead Technicians — Time & Attendance');
+
+  if (data.technicians && data.technicians.length > 0) {
+    data.technicians.forEach((tech, idx) => {
+      checkPageBreak(130);
+
+      // Sub-header for each technician
+      doc.setFillColor(...medGray);
+      doc.rect(margin, y, contentWidth, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...accentYellow);
+      doc.text(`Technician ${idx + 1}: ${tech.name || 'Unnamed'}`, margin + 8, y + 15);
+      y += 28;
+
+      drawTwoFields('Work Punch In', formatDateTime(tech.workPunchIn), 'Work Punch Out', formatDateTime(tech.workPunchOut));
+      drawTwoFields('Lunch Punch In', formatDateTime(tech.lunchPunchIn), 'Lunch Punch Out', formatDateTime(tech.lunchPunchOut));
+    });
+  } else {
+    checkPageBreak(40);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(11);
+    doc.setTextColor(...medGray);
+    doc.text('No technicians recorded.', margin + 6, y + 16);
+    y += 32;
+  }
+
+  // ── ASSISTANT TECHNICIANS ────────────────────────────────────────────────────
+  if (data.assisTechs && data.assisTechs.length > 0) {
+    drawSectionHeader('Assistant Technicians — Time & Attendance');
+
+    data.assisTechs.forEach((tech, idx) => {
+      checkPageBreak(130);
+
+      doc.setFillColor(...medGray);
+      doc.rect(margin, y, contentWidth, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...accentYellow);
+      doc.text(`ASSIS Tech ${idx + 1}: ${tech.name || 'Unnamed'}`, margin + 8, y + 15);
+      y += 28;
+
+      drawTwoFields('Work Punch In', formatDateTime(tech.workPunchIn), 'Work Punch Out', formatDateTime(tech.workPunchOut));
+      drawTwoFields('Lunch Punch In', formatDateTime(tech.lunchPunchIn), 'Lunch Punch Out', formatDateTime(tech.lunchPunchOut));
+    });
+  }
+
+  // ── WORK DETAILS ────────────────────────────────────────────────────────────
+  drawSectionHeader('Work Details');
+  drawTextArea('Work Performed', data.workPerformed);
+  drawTextArea('Materials Used', data.materialsUsed);
+  drawTextArea('Equipment Used', data.equipmentUsed);
+
+  // ── STATUS ──────────────────────────────────────────────────────────────────
+  drawSectionHeader('Project Status');
+  drawTwoFields('Work Status', data.workStatus, 'Percent Complete', data.percentComplete ? `${data.percentComplete}%` : 'N/A');
+
+  // ── ADDITIONAL NOTES ────────────────────────────────────────────────────────
+  if (data.additionalNotes) {
+    drawSectionHeader('Additional Notes');
+    drawTextArea('Notes', data.additionalNotes);
+  }
+
+  // ── SIGNATURE ───────────────────────────────────────────────────────────────
+  if (data.signature) {
+    drawSectionHeader('Signature');
+    checkPageBreak(100);
+    try {
+      doc.addImage(data.signature, 'PNG', margin, y, 200, 80);
+      y += 90;
+    } catch {
+      // skip if signature image fails
+    }
+  }
+
+  // ── FOOTER ──────────────────────────────────────────────────────────────────
   const totalPages = doc.internal.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    drawFooter(doc, pageWidth, pageHeight, p, totalPages);
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(...darkGray);
+    doc.rect(0, pageHeight - 30, pageWidth, 30, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...lightGray);
+    doc.text('Security Engineering Inc. — Confidential Field Report', margin, pageHeight - 10);
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
   }
 
   // Save
-  const dateTag = new Date().toISOString().slice(0, 10);
-  const jobTag = data.jobCode ? `_${data.jobCode.replace(/[^a-zA-Z0-9]/g, '-')}` : '';
-  doc.save(`field-report${jobTag}_${dateTag}.pdf`);
+  const fileName = `field-report-${data.jobNumber || 'draft'}-${data.date || 'undated'}.pdf`;
+  doc.save(fileName);
 }
