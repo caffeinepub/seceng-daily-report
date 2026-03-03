@@ -1,58 +1,89 @@
 {
   "kind": "build_request",
-  "title": "Add Project Manager and Location Contact fields",
-  "projectName": "Field Report App",
+  "title": "Rename labels and reorder SIGNATURE section",
+  "projectName": "Field Report Form",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add a 'Project Manager' text input field to the ReportForm component in the Project Info section, allowing users to enter the project manager's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
+      "text": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'PERSONNEL' to 'TECHNICAL TEAM'.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "Add Project Manager"
+          "Change the text 'PERSONNEL' to 'TECHNICAL TEAM'."
         ]
       },
       "acceptanceCriteria": [
-        "A labeled 'Project Manager' text input appears in the ReportForm within the project info section",
-        "The entered value is stored in form state",
-        "The Project Manager name appears in the generated PDF report under project info",
-        "The ReportData interface includes a projectManager field"
+        "The word 'PERSONNEL' no longer appears as a visible label or section heading in the form UI.",
+        "The section heading now reads 'TECHNICAL TEAM'."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add a 'Location Contact' text input field to the ReportForm component in the Project Info section, allowing users to enter the on-site location contact's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
+      "text": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'LOCATION CONTACT' to 'POINT OF CONTACT'.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "Add Location Contact"
+          "Change the text 'LOCATION CONTACT' with 'POINT OF CONTACT'."
         ]
       },
       "acceptanceCriteria": [
-        "A labeled 'Location Contact' text input appears in the ReportForm within the project info section",
-        "The entered value is stored in form state",
-        "The Location Contact name appears in the generated PDF report under project info",
-        "The ReportData interface includes a locationContact field"
+        "The text 'LOCATION CONTACT' no longer appears as a visible label or section heading in the form UI.",
+        "The section heading now reads 'POINT OF CONTACT'."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Reorder the form sections in ReportForm so that the 'SIGNATURE' section is rendered last, after all other sections.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Make 'SIGNATURE' the last item on the list"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The SIGNATURE section appears at the bottom of the form, after every other section.",
+        "No other section ordering is changed."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Update the PDF generator (pdfGenerator.ts) to reflect all three changes: use 'TECHNICAL TEAM' instead of 'PERSONNEL', 'POINT OF CONTACT' instead of 'LOCATION CONTACT', and render the SIGNATURE section last in the generated PDF.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Change the text 'PERSONNEL' to 'TECHNICAL TEAM'.",
+          "Change the text 'LOCATION CONTACT' with 'POINT OF CONTACT'.",
+          "Make 'SIGNATURE' the last item on the list"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Generated PDFs display 'TECHNICAL TEAM' instead of 'PERSONNEL'.",
+        "Generated PDFs display 'POINT OF CONTACT' instead of 'LOCATION CONTACT'.",
+        "The SIGNATURE section appears last in the generated PDF."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/hooks/",
-    "Do not modify frontend/src/main.tsx",
-    "Do not modify files under frontend/src/components/ui"
+    "Do not alter any other section labels, form fields, or UI layout beyond what is specified.",
+    "Do not modify files listed in frontend.immutablePaths."
   ],
   "nonGoals": [
-    "Backend persistence of form data",
-    "Authentication or user management",
-    "Changes to the site photos upload feature",
-    "Changes to the auto-fill date/time feature"
+    "Adding new form fields or sections.",
+    "Changing backend logic or data models.",
+    "Redesigning the visual theme or styling."
   ],
   "imageRequirements": {
     "required": [],

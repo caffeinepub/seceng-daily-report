@@ -1,40 +1,56 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-03T03:06:01.867Z",
+  "generatedAt": "2026-03-03T03:25:17.602Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add a 'Project Manager' text input field to the ReportForm component in the Project Info section, allowing users to enter the project manager's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
+        "summary": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'PERSONNEL' to 'TECHNICAL TEAM'.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/pdfGenerator.ts",
           "frontend/src/components/ReportForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/pdfGenerator.ts",
           "frontend/src/components/ReportForm.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add a 'Location Contact' text input field to the ReportForm component in the Project Info section, allowing users to enter the on-site location contact's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
+        "summary": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'LOCATION CONTACT' to 'POINT OF CONTACT'.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/pdfGenerator.ts",
           "frontend/src/components/ReportForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/pdfGenerator.ts",
           "frontend/src/components/ReportForm.tsx"
         ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Reorder the form sections in ReportForm so that the 'SIGNATURE' section is rendered last, after all other sections.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/ReportForm.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/ReportForm.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Update the PDF generator (pdfGenerator.ts) to reflect all three changes: use 'TECHNICAL TEAM' instead of 'PERSONNEL', 'POINT OF CONTACT' instead of 'LOCATION CONTACT', and render the SIGNATURE section last in the generated PDF.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/utils/pdfGenerator.ts"
+        ],
+        "matchedFiles": []
       }
     ]
   },
@@ -44,7 +60,6 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/ReportForm.tsx",
-    "frontend/src/utils/pdfGenerator.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -1,49 +1,66 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add Project Manager and Location Contact fields",
+  "title": "Rename labels and reorder SIGNATURE section",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add Project Manager text input field to the ReportForm component in the Project Info section, include it in ReportData interface, and render it in the generated PDF under project info",
+      "summary": "Change all occurrences of 'PERSONNEL' label to 'TECHNICAL TEAM' in the ReportForm component",
       "acceptanceCriteria": [
-        "A labeled 'Project Manager' text input appears in the ReportForm within the project info section",
-        "The entered value is stored in form state",
-        "The Project Manager name appears in the generated PDF report under project info",
-        "The ReportData interface includes a projectManager field"
+        "The word 'PERSONNEL' no longer appears as a visible label or section heading in the form UI.",
+        "The section heading now reads 'TECHNICAL TEAM'."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/pdfGenerator.ts",
-          "operation": "modify",
-          "description": "Add projectManager field to the ReportData interface and update the generatePDF function to render the Project Manager value in the project info section of the PDF, placing it after the project name field"
-        },
-        {
           "path": "frontend/src/components/ReportForm.tsx",
           "operation": "modify",
-          "description": "Add a projectManager state field to the form state, add a labeled text input for 'Project Manager' in the Project Info section (after the project name input), bind it to the state, and pass the projectManager value to the pdfGenerator when generating the report"
+          "description": "Update the section heading text from 'PERSONNEL' to 'TECHNICAL TEAM' in the form UI. Locate all instances of the 'PERSONNEL' string used as a label or heading and replace with 'TECHNICAL TEAM'."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add Location Contact text input field to the ReportForm component in the Project Info section, include it in ReportData interface, and render it in the generated PDF under project info",
+      "summary": "Change all occurrences of 'LOCATION CONTACT' label to 'POINT OF CONTACT' in the ReportForm component",
       "acceptanceCriteria": [
-        "A labeled 'Location Contact' text input appears in the ReportForm within the project info section",
-        "The entered value is stored in form state",
-        "The Location Contact name appears in the generated PDF report under project info",
-        "The ReportData interface includes a locationContact field"
+        "The text 'LOCATION CONTACT' no longer appears as a visible label or section heading in the form UI.",
+        "The section heading now reads 'POINT OF CONTACT'."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Update the section heading text from 'LOCATION CONTACT' to 'POINT OF CONTACT' in the form UI. Locate all instances of the 'LOCATION CONTACT' string used as a label or heading and replace with 'POINT OF CONTACT'."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Reorder form sections so SIGNATURE section appears last after all other sections",
+      "acceptanceCriteria": [
+        "The SIGNATURE section appears at the bottom of the form, after every other section.",
+        "No other section ordering is changed."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Reorder the JSX structure in the ReportForm component so that the SIGNATURE section is rendered last, after all other form sections (project info, technical team, materials, equipment, safety, visitors, photos). Move the SIGNATURE section JSX block to the end while preserving all other section order."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Update PDF generator to use new labels and SIGNATURE section order",
+      "acceptanceCriteria": [
+        "Generated PDFs display 'TECHNICAL TEAM' instead of 'PERSONNEL'.",
+        "Generated PDFs display 'POINT OF CONTACT' instead of 'LOCATION CONTACT'.",
+        "The SIGNATURE section appears last in the generated PDF."
       ],
       "file_operations": [
         {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Add locationContact field to the ReportData interface and update the generatePDF function to render the Location Contact value in the project info section of the PDF, placing it after the Project Manager field"
-        },
-        {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Add a locationContact state field to the form state, add a labeled text input for 'Location Contact' in the Project Info section (after the Project Manager input), bind it to the state, and pass the locationContact value to the pdfGenerator when generating the report"
+          "description": "Update the PDF generation function to reflect all label changes and section reordering. Replace 'PERSONNEL' with 'TECHNICAL TEAM', replace 'LOCATION CONTACT' with 'POINT OF CONTACT', and ensure the SIGNATURE section is rendered last in the PDF output after all other sections."
         }
       ]
     }

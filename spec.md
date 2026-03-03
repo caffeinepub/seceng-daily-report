@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Add "Project Manager" and "Location Contact" text input fields to the Field Report form and PDF output.
+**Goal:** Rename two section labels and move the SIGNATURE section to the end of the form, both in the UI and in the PDF generator.
 
 **Planned changes:**
-- Add a `projectManager` field to the `ReportData` interface
-- Add a `locationContact` field to the `ReportData` interface
-- Add a labeled "Project Manager" text input in the Project Info section of `ReportForm`
-- Add a labeled "Location Contact" text input in the Project Info section of `ReportForm`
-- Render both fields in the generated PDF under the project info section
+- Rename the "PERSONNEL" section label to "TECHNICAL TEAM" in the form UI and generated PDF.
+- Rename the "LOCATION CONTACT" section label to "POINT OF CONTACT" in the form UI and generated PDF.
+- Move the "SIGNATURE" section to be the last section in both the form UI and the generated PDF.
 
-**User-visible outcome:** Users can enter a Project Manager name and a Location Contact name when filling out a field report, and both values appear in the generated PDF report.
+**User-visible outcome:** The form and any generated PDFs will display "TECHNICAL TEAM" and "POINT OF CONTACT" as section headings, with the SIGNATURE section appearing at the bottom.

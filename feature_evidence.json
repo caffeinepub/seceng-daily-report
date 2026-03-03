@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-project-manager-text-input-field-to-the-reportform-component-in-the-project-info-section-allowing-users-to-enter-the-project-manager-s-name-include-this-field-in-the-reportdata-interface-and-render-it-in-the-generated-pdf-under-the-project-info-section",
-      "featureTitle": "Add a 'Project Manager' text input field to the ReportForm component in the Project Info section, allowing users to enter the project manager's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
+      "featureId": "feature-in-the-reportform-component-and-any-related-ui-change-all-occurrences-of-the-label-heading-text-personnel-to-technical-team",
+      "featureTitle": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'PERSONNEL' to 'TECHNICAL TEAM'.",
       "files": [
-        "frontend/src/components/ReportForm.tsx",
-        "frontend/src/utils/pdfGenerator.ts"
+        "frontend/src/components/ReportForm.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -22,11 +21,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-location-contact-text-input-field-to-the-reportform-component-in-the-project-info-section-allowing-users-to-enter-the-on-site-location-contact-s-name-include-this-field-in-the-reportdata-interface-and-render-it-in-the-generated-pdf-under-the-project-info-section",
-      "featureTitle": "Add a 'Location Contact' text input field to the ReportForm component in the Project Info section, allowing users to enter the on-site location contact's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
+      "featureId": "feature-in-the-reportform-component-and-any-related-ui-change-all-occurrences-of-the-label-heading-text-location-contact-to-point-of-contact",
+      "featureTitle": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'LOCATION CONTACT' to 'POINT OF CONTACT'.",
       "files": [
-        "frontend/src/components/ReportForm.tsx",
-        "frontend/src/utils/pdfGenerator.ts"
+        "frontend/src/components/ReportForm.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -38,6 +36,25 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-reorder-the-form-sections-in-reportform-so-that-the-signature-section-is-rendered-last-after-all-other-sections",
+      "featureTitle": "Reorder the form sections in ReportForm so that the 'SIGNATURE' section is rendered last, after all other sections.",
+      "files": [
+        "frontend/src/components/ReportForm.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "camera@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

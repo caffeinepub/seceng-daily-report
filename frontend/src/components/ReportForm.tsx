@@ -1,771 +1,1084 @@
-// Daily Field Report Form Component
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { generatePDF } from '@/utils/pdfGenerator';
-import { FileText, Save, RotateCcw, Clock, User, Wrench, ClipboardList, CheckCircle, AlertTriangle, Loader2, X, ImagePlus } from 'lucide-react';
-
-const STORAGE_KEY = 'daily_field_report_v1';
-
-interface TechEntry {
-  name: string;
-  punchInDate: string;
-  punchInTime: string;
-  punchOutDate: string;
-  punchOutTime: string;
-}
+import { useState, useRef, useEffect, useCallback } from "react";
+import { generatePDF } from "../utils/pdfGenerator";
 
 interface FormState {
-  // Project Info
+  // Project Information
   projectName: string;
   projectNumber: string;
   projectAddress: string;
   projectManager: string;
   locationContact: string;
-  // Punch times
-  punchInDate: string;
-  punchInTime: string;
-  punchOutDate: string;
-  punchOutTime: string;
-  // Personnel
-  leadTechName: string;
-  assistTechName: string;
-  additionalTechs: TechEntry[];
-  // Work Details
+  reportDate: string;
+  reportNumber: string;
+  weatherConditions: string;
+  temperature: string;
+
+  // Technical Team
+  personnel: Array<{
+    id: string;
+    name: string;
+    role: string;
+    hoursWorked: string;
+    company: string;
+  }>;
+
+  // Work Performed
   workPerformed: string;
-  materialsUsed: string;
-  equipmentUsed: string;
-  // Status
-  workStatus: string;
-  percentComplete: string;
-  // Notes
-  safetyNotes: string;
-  additionalNotes: string;
+
+  // Materials Used
+  materialsUsed: Array<{
+    id: string;
+    description: string;
+    quantity: string;
+    unit: string;
+  }>;
+
+  // Equipment Used
+  equipmentUsed: Array<{
+    id: string;
+    description: string;
+    quantity: string;
+    hours: string;
+  }>;
+
+  // Safety Observations
+  safetyObservations: string;
+  incidents: string;
+  nearMisses: string;
+
+  // Issues and Delays
+  issuesDelays: string;
+
+  // Visitors
+  visitors: Array<{
+    id: string;
+    name: string;
+    company: string;
+    purpose: string;
+    timeIn: string;
+    timeOut: string;
+  }>;
+
+  // Site Photos
+  sitePhotos: Array<{
+    id: string;
+    file: File;
+    caption: string;
+    preview: string;
+  }>;
+
   // Signature
-  signatureName: string;
-  signatureTitle: string;
   signatureData: string;
+  signatoryName: string;
+  signatoryTitle: string;
 }
 
-interface PhotoEntry {
-  file: File;
-  dataUrl: string;
-}
+const defaultFormState: FormState = {
+  projectName: "",
+  projectNumber: "",
+  projectAddress: "",
+  projectManager: "",
+  locationContact: "",
+  reportDate: new Date().toISOString().split("T")[0],
+  reportNumber: "",
+  weatherConditions: "",
+  temperature: "",
+  personnel: [],
+  workPerformed: "",
+  materialsUsed: [],
+  equipmentUsed: [],
+  safetyObservations: "",
+  incidents: "",
+  nearMisses: "",
+  issuesDelays: "",
+  visitors: [],
+  sitePhotos: [],
+  signatureData: "",
+  signatoryName: "",
+  signatoryTitle: "",
+};
 
-function getCurrentDateTime() {
-  const now = new Date();
-  const dateStr = now.toISOString().split('T')[0];
-  const timeStr = now.toTimeString().slice(0, 5);
-  return { dateStr, timeStr };
-}
-
-function getInitialState(): FormState {
-  const { dateStr, timeStr } = getCurrentDateTime();
-  return {
-    projectName: '',
-    projectNumber: '',
-    projectAddress: '',
-    projectManager: '',
-    locationContact: '',
-    punchInDate: dateStr,
-    punchInTime: timeStr,
-    punchOutDate: dateStr,
-    punchOutTime: timeStr,
-    leadTechName: '',
-    assistTechName: '',
-    additionalTechs: [],
-    workPerformed: '',
-    materialsUsed: '',
-    equipmentUsed: '',
-    workStatus: 'in-progress',
-    percentComplete: '',
-    safetyNotes: '',
-    additionalNotes: '',
-    signatureName: '',
-    signatureTitle: '',
-    signatureData: '',
-  };
+function generateId() {
+  return Math.random().toString(36).substr(2, 9);
 }
 
 export default function ReportForm() {
-  const [form, setForm] = useState<FormState>(getInitialState);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [saveMessage, setSaveMessage] = useState('');
-  const [sitePhotos, setSitePhotos] = useState<PhotoEntry[]>([]);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isDrawing = useRef(false);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-
-  // Load from localStorage on mount, but always override date/time with current values
-  useEffect(() => {
-    const { dateStr, timeStr } = getCurrentDateTime();
+  const [formState, setFormState] = useState<FormState>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem("dailyFieldReport");
       if (saved) {
         const parsed = JSON.parse(saved);
-        const initial = getInitialState();
-        const merged: FormState = { ...initial };
-        (Object.keys(initial) as (keyof FormState)[]).forEach(key => {
-          if (key in parsed) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (merged as any)[key] = parsed[key];
-          }
-        });
-        // Always override date/time fields with current values on every load
-        merged.punchInDate = dateStr;
-        merged.punchInTime = timeStr;
-        merged.punchOutDate = dateStr;
-        merged.punchOutTime = timeStr;
-        setForm(merged);
-      } else {
-        // No saved data — initial state already has current date/time
-        setForm(getInitialState());
+        return { ...defaultFormState, ...parsed, sitePhotos: [] };
       }
     } catch {
-      setForm(getInitialState());
+      // ignore
     }
-  }, []);
+    return defaultFormState;
+  });
 
-  // Restore signature canvas on mount
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lastPos, setLastPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Save to localStorage on change (excluding photos)
   useEffect(() => {
-    if (form.signatureData && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
+    const toSave = { ...formState, sitePhotos: [] };
+    localStorage.setItem("dailyFieldReport", JSON.stringify(toSave));
+  }, [formState]);
+
+  // Restore signature from saved data
+  useEffect(() => {
+    if (formState.signatureData && signatureCanvasRef.current) {
+      const canvas = signatureCanvasRef.current;
+      const ctx = canvas.getContext("2d");
       if (ctx) {
         const img = new Image();
-        img.onload = () => ctx.drawImage(img, 0, 0);
-        img.src = form.signatureData;
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = formState.signatureData;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const updateField = (field: keyof FormState, value: string | TechEntry[]) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+  const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setFormState((prev) => ({ ...prev, [key]: value }));
   };
 
-  const saveToStorage = () => {
-    setIsSaving(true);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
-      setSaveMessage('Saved successfully!');
-    } catch {
-      setSaveMessage('Save failed.');
-    }
-    setTimeout(() => {
-      setIsSaving(false);
-      setSaveMessage('');
-    }, 2000);
+  // Personnel
+  const addPersonnel = () => {
+    updateField("personnel", [
+      ...formState.personnel,
+      { id: generateId(), name: "", role: "", hoursWorked: "", company: "" },
+    ]);
   };
 
-  const resetForm = () => {
-    if (confirm('Reset all fields? This cannot be undone.')) {
-      const fresh = getInitialState();
-      setForm(fresh);
-      localStorage.removeItem(STORAGE_KEY);
-      setSitePhotos([]);
-      if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext('2d');
-        ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      }
-    }
+  const updatePersonnel = (id: string, field: string, value: string) => {
+    updateField(
+      "personnel",
+      formState.personnel.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+    );
   };
 
-  // Signature drawing
-  const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+  const removePersonnel = (id: string) => {
+    updateField(
+      "personnel",
+      formState.personnel.filter((p) => p.id !== id)
+    );
+  };
+
+  // Materials
+  const addMaterial = () => {
+    updateField("materialsUsed", [
+      ...formState.materialsUsed,
+      { id: generateId(), description: "", quantity: "", unit: "" },
+    ]);
+  };
+
+  const updateMaterial = (id: string, field: string, value: string) => {
+    updateField(
+      "materialsUsed",
+      formState.materialsUsed.map((m) => (m.id === id ? { ...m, [field]: value } : m))
+    );
+  };
+
+  const removeMaterial = (id: string) => {
+    updateField(
+      "materialsUsed",
+      formState.materialsUsed.filter((m) => m.id !== id)
+    );
+  };
+
+  // Equipment
+  const addEquipment = () => {
+    updateField("equipmentUsed", [
+      ...formState.equipmentUsed,
+      { id: generateId(), description: "", quantity: "", hours: "" },
+    ]);
+  };
+
+  const updateEquipment = (id: string, field: string, value: string) => {
+    updateField(
+      "equipmentUsed",
+      formState.equipmentUsed.map((e) => (e.id === id ? { ...e, [field]: value } : e))
+    );
+  };
+
+  const removeEquipment = (id: string) => {
+    updateField(
+      "equipmentUsed",
+      formState.equipmentUsed.filter((e) => e.id !== id)
+    );
+  };
+
+  // Visitors
+  const addVisitor = () => {
+    updateField("visitors", [
+      ...formState.visitors,
+      { id: generateId(), name: "", company: "", purpose: "", timeIn: "", timeOut: "" },
+    ]);
+  };
+
+  const updateVisitor = (id: string, field: string, value: string) => {
+    updateField(
+      "visitors",
+      formState.visitors.map((v) => (v.id === id ? { ...v, [field]: value } : v))
+    );
+  };
+
+  const removeVisitor = (id: string) => {
+    updateField(
+      "visitors",
+      formState.visitors.filter((v) => v.id !== id)
+    );
+  };
+
+  // Site Photos
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const newPhotos = files.map((file) => ({
+      id: generateId(),
+      file,
+      caption: "",
+      preview: URL.createObjectURL(file),
+    }));
+    updateField("sitePhotos", [...formState.sitePhotos, ...newPhotos]);
+  };
+
+  const updatePhotoCaption = (id: string, caption: string) => {
+    updateField(
+      "sitePhotos",
+      formState.sitePhotos.map((p) => (p.id === id ? { ...p, caption } : p))
+    );
+  };
+
+  const removePhoto = (id: string) => {
+    updateField(
+      "sitePhotos",
+      formState.sitePhotos.filter((p) => p.id !== id)
+    );
+  };
+
+  // Signature canvas
+  const getCanvasPos = (
+    canvas: HTMLCanvasElement,
+    e: React.MouseEvent | React.TouchEvent
+  ) => {
     const rect = canvas.getBoundingClientRect();
-    if ('touches' in e) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ("touches" in e) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY,
+      };
     }
-    return { x: (e as React.MouseEvent).clientX - rect.left, y: (e as React.MouseEvent).clientY - rect.top };
+    return {
+      x: ((e as React.MouseEvent).clientX - rect.left) * scaleX,
+      y: ((e as React.MouseEvent).clientY - rect.top) * scaleY,
+    };
   };
 
-  const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    isDrawing.current = true;
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext('2d')!;
-    const pos = getPos(e, canvas);
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-  };
+  const startDrawing = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      const canvas = signatureCanvasRef.current;
+      if (!canvas) return;
+      setIsDrawing(true);
+      setLastPos(getCanvasPos(canvas, e));
+    },
+    []
+  );
 
-  const draw = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    if (!isDrawing.current) return;
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext('2d')!;
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#f59e0b';
-    const pos = getPos(e, canvas);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-  };
+  const draw = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      if (!isDrawing || !lastPos) return;
+      const canvas = signatureCanvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const pos = getCanvasPos(canvas, e);
+      ctx.beginPath();
+      ctx.moveTo(lastPos.x, lastPos.y);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      setLastPos(pos);
+    },
+    [isDrawing, lastPos]
+  );
 
-  const endDraw = () => {
-    isDrawing.current = false;
-    if (canvasRef.current) {
-      updateField('signatureData', canvasRef.current.toDataURL());
+  const stopDrawing = useCallback(() => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    setLastPos(null);
+    const canvas = signatureCanvasRef.current;
+    if (canvas) {
+      updateField("signatureData", canvas.toDataURL());
     }
-  };
+  }, [isDrawing]);
 
   const clearSignature = () => {
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      updateField('signatureData', '');
+    const canvas = signatureCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-  };
-
-  const addAdditionalTech = () => {
-    const { dateStr, timeStr } = getCurrentDateTime();
-    const newTech: TechEntry = {
-      name: '',
-      punchInDate: dateStr,
-      punchInTime: timeStr,
-      punchOutDate: dateStr,
-      punchOutTime: timeStr,
-    };
-    updateField('additionalTechs', [...form.additionalTechs, newTech]);
-  };
-
-  const updateAdditionalTech = (index: number, field: keyof TechEntry, value: string) => {
-    const updated = form.additionalTechs.map((t, i) =>
-      i === index ? { ...t, [field]: value } : t
-    );
-    updateField('additionalTechs', updated);
-  };
-
-  const removeAdditionalTech = (index: number) => {
-    updateField('additionalTechs', form.additionalTechs.filter((_, i) => i !== index));
-  };
-
-  // Site Photos handlers
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const newEntries: PhotoEntry[] = [];
-    let loaded = 0;
-
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        newEntries.push({ file, dataUrl: ev.target?.result as string });
-        loaded++;
-        if (loaded === files.length) {
-          setSitePhotos(prev => [...prev, ...newEntries]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Reset input so same files can be re-selected if needed
-    e.target.value = '';
-  };
-
-  const removePhoto = (index: number) => {
-    setSitePhotos(prev => prev.filter((_, i) => i !== index));
+    updateField("signatureData", "");
   };
 
   const handleGeneratePDF = async () => {
-    setIsGenerating(true);
+    setIsGeneratingPDF(true);
     try {
-      const signatureData = canvasRef.current ? canvasRef.current.toDataURL() : '';
       await generatePDF({
-        ...form,
-        signatureData,
-        sitePhotos: sitePhotos.map(p => p.dataUrl),
+        ...formState,
+        signatureData: formState.signatureData,
       });
     } catch (err) {
-      console.error('PDF generation failed:', err);
+      console.error("PDF generation failed:", err);
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingPDF(false);
     }
   };
 
-  const sectionClass = "bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm";
-  const sectionTitleClass = "text-lg font-oswald font-semibold text-foreground uppercase tracking-wider mb-4 flex items-center gap-2";
-  const fieldGroupClass = "grid grid-cols-1 md:grid-cols-2 gap-4";
-  const labelClass = "text-sm font-medium text-muted-foreground uppercase tracking-wide";
-  const inputClass = "bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-accent-yellow focus:ring-accent-yellow/20";
+  const handleClearForm = () => {
+    if (window.confirm("Are you sure you want to clear all form data? This cannot be undone.")) {
+      clearSignature();
+      setFormState(defaultFormState);
+      localStorage.removeItem("dailyFieldReport");
+    }
+  };
+
+  const toggleSection = (section: string) => {
+    setActiveSection((prev) => (prev === section ? null : section));
+  };
+
+  const sectionClass = (section: string) =>
+    `form-section ${activeSection === section ? "active" : ""}`;
+
+  const inputClass =
+    "w-full bg-surface border border-border rounded px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:border-accent-yellow focus:ring-1 focus:ring-accent-yellow text-sm font-mono";
+
+  const labelClass = "block text-xs font-bold tracking-widest text-accent-yellow uppercase mb-1";
+
+  const sectionHeaderClass =
+    "flex items-center justify-between w-full text-left px-4 py-3 bg-surface-2 border border-border rounded cursor-pointer hover:border-accent-yellow transition-colors group";
+
+  const addBtnClass =
+    "flex items-center gap-2 px-3 py-1.5 text-xs font-bold tracking-wider uppercase border border-accent-yellow text-accent-yellow rounded hover:bg-accent-yellow hover:text-black transition-colors";
+
+  const removeBtnClass =
+    "text-xs text-muted-foreground hover:text-destructive transition-colors px-2 py-1 rounded border border-transparent hover:border-destructive";
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-
-      {/* ── PUNCH SECTION ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <Clock className="w-5 h-5 text-accent-yellow" />
-          Punch
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Punch In row */}
-          <div className="space-y-1">
-            <Label className={labelClass}>Punch In</Label>
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={form.punchInDate}
-                onChange={e => updateField('punchInDate', e.target.value)}
-                className={`${inputClass} flex-1 min-w-0`}
-              />
-              <Input
-                type="time"
-                value={form.punchInTime}
-                onChange={e => updateField('punchInTime', e.target.value)}
-                className={`${inputClass} w-32 shrink-0`}
-              />
-            </div>
-          </div>
-          {/* Punch Out row */}
-          <div className="space-y-1">
-            <Label className={labelClass}>Punch Out</Label>
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={form.punchOutDate}
-                onChange={e => updateField('punchOutDate', e.target.value)}
-                className={`${inputClass} flex-1 min-w-0`}
-              />
-              <Input
-                type="time"
-                value={form.punchOutTime}
-                onChange={e => updateField('punchOutTime', e.target.value)}
-                className={`${inputClass} w-32 shrink-0`}
-              />
-            </div>
-          </div>
-        </div>
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-3">
+      {/* Action Buttons */}
+      <div className="flex gap-3 justify-end mb-4">
+        <button
+          onClick={handleClearForm}
+          className="px-4 py-2 text-xs font-bold tracking-widest uppercase border border-border text-muted-foreground rounded hover:border-destructive hover:text-destructive transition-colors"
+        >
+          Clear Form
+        </button>
+        <button
+          onClick={handleGeneratePDF}
+          disabled={isGeneratingPDF}
+          className="btn-primary flex items-center gap-2 px-6 py-2 text-xs font-bold tracking-widest uppercase rounded"
+        >
+          {isGeneratingPDF ? (
+            <>
+              <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Generate PDF
+            </>
+          )}
+        </button>
       </div>
 
       {/* ── PROJECT INFORMATION ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <ClipboardList className="w-5 h-5 text-accent-yellow" />
-          Project Information
-        </h2>
-        <div className="space-y-4">
-          <div className={fieldGroupClass}>
-            <div className="space-y-2">
-              <Label className={labelClass}>Project Name</Label>
-              <Input
-                value={form.projectName}
-                onChange={e => updateField('projectName', e.target.value)}
-                placeholder="Enter project name"
+      <div className={sectionClass("project")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("project")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Project Information
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "project" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "project" && (
+          <div className="border border-t-0 border-border rounded-b p-4 space-y-4 bg-surface">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Project Name</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.projectName}
+                  onChange={(e) => updateField("projectName", e.target.value)}
+                  placeholder="Enter project name"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Project Number</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.projectNumber}
+                  onChange={(e) => updateField("projectNumber", e.target.value)}
+                  placeholder="e.g. PRJ-2024-001"
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelClass}>Project Address</label>
+              <input
+                type="text"
                 className={inputClass}
+                value={formState.projectAddress}
+                onChange={(e) => updateField("projectAddress", e.target.value)}
+                placeholder="Full site address"
               />
             </div>
-            <div className="space-y-2">
-              <Label className={labelClass}>Project Number</Label>
-              <Input
-                value={form.projectNumber}
-                onChange={e => updateField('projectNumber', e.target.value)}
-                placeholder="Enter project number"
-                className={inputClass}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Project Manager</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.projectManager}
+                  onChange={(e) => updateField("projectManager", e.target.value)}
+                  placeholder="Project manager name"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Point of Contact</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.locationContact}
+                  onChange={(e) => updateField("locationContact", e.target.value)}
+                  placeholder="Point of contact name"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className={labelClass}>Report Date</label>
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={formState.reportDate}
+                  onChange={(e) => updateField("reportDate", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Report Number</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.reportNumber}
+                  onChange={(e) => updateField("reportNumber", e.target.value)}
+                  placeholder="e.g. DR-001"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Weather Conditions</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.weatherConditions}
+                  onChange={(e) => updateField("weatherConditions", e.target.value)}
+                  placeholder="e.g. Sunny, Cloudy"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Temperature (°F)</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.temperature}
+                  onChange={(e) => updateField("temperature", e.target.value)}
+                  placeholder="e.g. 72°F"
+                />
+              </div>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label className={labelClass}>Project Address</Label>
-            <Input
-              value={form.projectAddress}
-              onChange={e => updateField('projectAddress', e.target.value)}
-              placeholder="Enter project address"
-              className={inputClass}
-            />
-          </div>
-          <div className={fieldGroupClass}>
-            <div className="space-y-2">
-              <Label className={labelClass}>Project Manager</Label>
-              <Input
-                value={form.projectManager}
-                onChange={e => updateField('projectManager', e.target.value)}
-                placeholder="Enter project manager name"
-                className={inputClass}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className={labelClass}>Location Contact</Label>
-              <Input
-                value={form.locationContact}
-                onChange={e => updateField('locationContact', e.target.value)}
-                placeholder="Enter location contact name"
-                className={inputClass}
-              />
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* ── PERSONNEL ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <User className="w-5 h-5 text-accent-yellow" />
-          Personnel
-        </h2>
-
-        {/* Lead Technician */}
-        <div className="mb-6">
-          <h3 className="text-sm font-oswald font-semibold text-accent-yellow uppercase tracking-wider mb-3">Lead Technician</h3>
-          <div className="space-y-2">
-            <Label className={labelClass}>Name</Label>
-            <Input
-              value={form.leadTechName}
-              onChange={e => updateField('leadTechName', e.target.value)}
-              placeholder="Lead technician name"
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        {/* Assistant Technician */}
-        <div className="mb-6">
-          <h3 className="text-sm font-oswald font-semibold text-accent-yellow uppercase tracking-wider mb-3">Assistant Technician</h3>
-          <div className="space-y-2">
-            <Label className={labelClass}>Name</Label>
-            <Input
-              value={form.assistTechName}
-              onChange={e => updateField('assistTechName', e.target.value)}
-              placeholder="Assistant technician name"
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        {/* Additional Technicians */}
-        <div>
-          <h3 className="text-sm font-oswald font-semibold text-accent-yellow uppercase tracking-wider mb-3">Additional Technicians</h3>
-          {form.additionalTechs.map((tech, index) => (
-            <div key={index} className="border border-border rounded-md p-4 mb-4 bg-background/50">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-medium text-muted-foreground">Technician {index + 1}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeAdditionalTech(index)}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 px-2"
-                >
-                  Remove
-                </Button>
+      {/* ── TECHNICAL TEAM ── */}
+      <div className={sectionClass("personnel")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("personnel")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Technical Team
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "personnel" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "personnel" && (
+          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
+            {formState.personnel.map((person, idx) => (
+              <div key={person.id} className="p-3 border border-border rounded bg-surface-2 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground font-mono">
+                    Team Member #{idx + 1}
+                  </span>
+                  <button onClick={() => removePersonnel(person.id)} className={removeBtnClass}>
+                    Remove
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>Name</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={person.name}
+                      onChange={(e) => updatePersonnel(person.id, "name", e.target.value)}
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Company</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={person.company}
+                      onChange={(e) => updatePersonnel(person.id, "company", e.target.value)}
+                      placeholder="Company name"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>Role / Trade</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={person.role}
+                      onChange={(e) => updatePersonnel(person.id, "role", e.target.value)}
+                      placeholder="e.g. Electrician"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Hours Worked</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={person.hoursWorked}
+                      onChange={(e) => updatePersonnel(person.id, "hoursWorked", e.target.value)}
+                      placeholder="e.g. 8"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className={labelClass}>Name</Label>
-                  <Input
-                    value={tech.name}
-                    onChange={e => updateAdditionalTech(index, 'name', e.target.value)}
-                    placeholder="Technician name"
+            ))}
+            <button onClick={addPersonnel} className={addBtnClass}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Team Member
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── WORK PERFORMED ── */}
+      <div className={sectionClass("work")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("work")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Work Performed
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "work" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "work" && (
+          <div className="border border-t-0 border-border rounded-b p-4 bg-surface">
+            <label className={labelClass}>Description of Work</label>
+            <textarea
+              className={`${inputClass} min-h-[120px] resize-y`}
+              value={formState.workPerformed}
+              onChange={(e) => updateField("workPerformed", e.target.value)}
+              placeholder="Describe all work performed today..."
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ── MATERIALS USED ── */}
+      <div className={sectionClass("materials")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("materials")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Materials Used
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "materials" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "materials" && (
+          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
+            {formState.materialsUsed.map((material, idx) => (
+              <div key={material.id} className="p-3 border border-border rounded bg-surface-2 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground font-mono">
+                    Material #{idx + 1}
+                  </span>
+                  <button onClick={() => removeMaterial(material.id)} className={removeBtnClass}>
+                    Remove
+                  </button>
+                </div>
+                <div>
+                  <label className={labelClass}>Description</label>
+                  <input
+                    type="text"
                     className={inputClass}
+                    value={material.description}
+                    onChange={(e) => updateMaterial(material.id, "description", e.target.value)}
+                    placeholder="Material description"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Tech Punch In */}
-                  <div className="space-y-1">
-                    <Label className={labelClass}>Punch In</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="date"
-                        value={tech.punchInDate}
-                        onChange={e => updateAdditionalTech(index, 'punchInDate', e.target.value)}
-                        className={`${inputClass} flex-1 min-w-0`}
-                      />
-                      <Input
-                        type="time"
-                        value={tech.punchInTime}
-                        onChange={e => updateAdditionalTech(index, 'punchInTime', e.target.value)}
-                        className={`${inputClass} w-32 shrink-0`}
-                      />
-                    </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>Quantity</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={material.quantity}
+                      onChange={(e) => updateMaterial(material.id, "quantity", e.target.value)}
+                      placeholder="e.g. 10"
+                    />
                   </div>
-                  {/* Tech Punch Out */}
-                  <div className="space-y-1">
-                    <Label className={labelClass}>Punch Out</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="date"
-                        value={tech.punchOutDate}
-                        onChange={e => updateAdditionalTech(index, 'punchOutDate', e.target.value)}
-                        className={`${inputClass} flex-1 min-w-0`}
-                      />
-                      <Input
-                        type="time"
-                        value={tech.punchOutTime}
-                        onChange={e => updateAdditionalTech(index, 'punchOutTime', e.target.value)}
-                        className={`${inputClass} w-32 shrink-0`}
-                      />
-                    </div>
+                  <div>
+                    <label className={labelClass}>Unit</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={material.unit}
+                      onChange={(e) => updateMaterial(material.id, "unit", e.target.value)}
+                      placeholder="e.g. lbs, ft, ea"
+                    />
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={addAdditionalTech}
-            className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10"
+            ))}
+            <button onClick={addMaterial} className={addBtnClass}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Material
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── EQUIPMENT USED ── */}
+      <div className={sectionClass("equipment")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("equipment")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Equipment Used
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "equipment" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            + Add Technician
-          </Button>
-        </div>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "equipment" && (
+          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
+            {formState.equipmentUsed.map((equipment, idx) => (
+              <div key={equipment.id} className="p-3 border border-border rounded bg-surface-2 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground font-mono">
+                    Equipment #{idx + 1}
+                  </span>
+                  <button onClick={() => removeEquipment(equipment.id)} className={removeBtnClass}>
+                    Remove
+                  </button>
+                </div>
+                <div>
+                  <label className={labelClass}>Description</label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={equipment.description}
+                    onChange={(e) => updateEquipment(equipment.id, "description", e.target.value)}
+                    placeholder="Equipment description"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>Quantity</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={equipment.quantity}
+                      onChange={(e) => updateEquipment(equipment.id, "quantity", e.target.value)}
+                      placeholder="e.g. 2"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Hours</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={equipment.hours}
+                      onChange={(e) => updateEquipment(equipment.id, "hours", e.target.value)}
+                      placeholder="e.g. 4"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button onClick={addEquipment} className={addBtnClass}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Equipment
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ── WORK DETAILS ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <Wrench className="w-5 h-5 text-accent-yellow" />
-          Work Details
-        </h2>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className={labelClass}>Work Performed</Label>
-            <Textarea
-              value={form.workPerformed}
-              onChange={e => updateField('workPerformed', e.target.value)}
-              placeholder="Describe work performed..."
-              rows={4}
-              className={inputClass}
-            />
-          </div>
-          <div className={fieldGroupClass}>
-            <div className="space-y-2">
-              <Label className={labelClass}>Materials Used</Label>
-              <Textarea
-                value={form.materialsUsed}
-                onChange={e => updateField('materialsUsed', e.target.value)}
-                placeholder="List materials used..."
-                rows={3}
-                className={inputClass}
+      {/* ── SAFETY OBSERVATIONS ── */}
+      <div className={sectionClass("safety")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("safety")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Safety Observations
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "safety" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "safety" && (
+          <div className="border border-t-0 border-border rounded-b p-4 space-y-4 bg-surface">
+            <div>
+              <label className={labelClass}>Observations</label>
+              <textarea
+                className={`${inputClass} min-h-[80px] resize-y`}
+                value={formState.safetyObservations}
+                onChange={(e) => updateField("safetyObservations", e.target.value)}
+                placeholder="Describe safety observations..."
               />
             </div>
-            <div className="space-y-2">
-              <Label className={labelClass}>Equipment Used</Label>
-              <Textarea
-                value={form.equipmentUsed}
-                onChange={e => updateField('equipmentUsed', e.target.value)}
-                placeholder="List equipment used..."
-                rows={3}
-                className={inputClass}
+            <div>
+              <label className={labelClass}>Incidents</label>
+              <textarea
+                className={`${inputClass} min-h-[80px] resize-y`}
+                value={formState.incidents}
+                onChange={(e) => updateField("incidents", e.target.value)}
+                placeholder="Describe any incidents..."
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Near Misses</label>
+              <textarea
+                className={`${inputClass} min-h-[80px] resize-y`}
+                value={formState.nearMisses}
+                onChange={(e) => updateField("nearMisses", e.target.value)}
+                placeholder="Describe any near misses..."
               />
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* ── STATUS ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <CheckCircle className="w-5 h-5 text-accent-yellow" />
-          Status
-        </h2>
-        <div className={fieldGroupClass}>
-          <div className="space-y-2">
-            <Label className={labelClass}>Work Status</Label>
-            <select
-              value={form.workStatus}
-              onChange={e => updateField('workStatus', e.target.value)}
-              className={`${inputClass} w-full h-10 rounded-md border px-3 py-2 text-sm`}
-            >
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="on-hold">On Hold</option>
-              <option value="pending-materials">Pending Materials</option>
-              <option value="pending-inspection">Pending Inspection</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label className={labelClass}>Percent Complete</Label>
-            <Input
-              value={form.percentComplete}
-              onChange={e => updateField('percentComplete', e.target.value)}
-              placeholder="e.g. 75%"
-              className={inputClass}
+      {/* ── ISSUES & DELAYS ── */}
+      <div className={sectionClass("issues")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("issues")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Issues &amp; Delays
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "issues" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "issues" && (
+          <div className="border border-t-0 border-border rounded-b p-4 bg-surface">
+            <label className={labelClass}>Description</label>
+            <textarea
+              className={`${inputClass} min-h-[100px] resize-y`}
+              value={formState.issuesDelays}
+              onChange={(e) => updateField("issuesDelays", e.target.value)}
+              placeholder="Describe any issues or delays encountered..."
             />
           </div>
-        </div>
+        )}
       </div>
 
-      {/* ── NOTES ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <AlertTriangle className="w-5 h-5 text-accent-yellow" />
-          Notes
-        </h2>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className={labelClass}>Safety Notes</Label>
-            <Textarea
-              value={form.safetyNotes}
-              onChange={e => updateField('safetyNotes', e.target.value)}
-              placeholder="Any safety observations or incidents..."
-              rows={3}
-              className={inputClass}
-            />
+      {/* ── VISITORS ── */}
+      <div className={sectionClass("visitors")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("visitors")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Visitors
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "visitors" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "visitors" && (
+          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
+            {formState.visitors.map((visitor, idx) => (
+              <div key={visitor.id} className="p-3 border border-border rounded bg-surface-2 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground font-mono">
+                    Visitor #{idx + 1}
+                  </span>
+                  <button onClick={() => removeVisitor(visitor.id)} className={removeBtnClass}>
+                    Remove
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>Name</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={visitor.name}
+                      onChange={(e) => updateVisitor(visitor.id, "name", e.target.value)}
+                      placeholder="Visitor name"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Company</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={visitor.company}
+                      onChange={(e) => updateVisitor(visitor.id, "company", e.target.value)}
+                      placeholder="Company name"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass}>Purpose of Visit</label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={visitor.purpose}
+                    onChange={(e) => updateVisitor(visitor.id, "purpose", e.target.value)}
+                    placeholder="Purpose of visit"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>Time In</label>
+                    <input
+                      type="time"
+                      className={inputClass}
+                      value={visitor.timeIn}
+                      onChange={(e) => updateVisitor(visitor.id, "timeIn", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Time Out</label>
+                    <input
+                      type="time"
+                      className={inputClass}
+                      value={visitor.timeOut}
+                      onChange={(e) => updateVisitor(visitor.id, "timeOut", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button onClick={addVisitor} className={addBtnClass}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Visitor
+            </button>
           </div>
-          <div className="space-y-2">
-            <Label className={labelClass}>Additional Notes</Label>
-            <Textarea
-              value={form.additionalNotes}
-              onChange={e => updateField('additionalNotes', e.target.value)}
-              placeholder="Any additional notes or comments..."
-              rows={3}
-              className={inputClass}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── SIGNATURE ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <FileText className="w-5 h-5 text-accent-yellow" />
-          Signature
-        </h2>
-        <div className="space-y-4">
-          <div className={fieldGroupClass}>
-            <div className="space-y-2">
-              <Label className={labelClass}>Name</Label>
-              <Input
-                value={form.signatureName}
-                onChange={e => updateField('signatureName', e.target.value)}
-                placeholder="Full name"
-                className={inputClass}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className={labelClass}>Title</Label>
-              <Input
-                value={form.signatureTitle}
-                onChange={e => updateField('signatureTitle', e.target.value)}
-                placeholder="Job title"
-                className={inputClass}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className={labelClass}>Signature</Label>
-            <div className="signature-container border border-border rounded-md overflow-hidden">
-              <canvas
-                ref={canvasRef}
-                width={600}
-                height={150}
-                className="w-full touch-none cursor-crosshair"
-                onMouseDown={startDraw}
-                onMouseMove={draw}
-                onMouseUp={endDraw}
-                onMouseLeave={endDraw}
-                onTouchStart={startDraw}
-                onTouchMove={draw}
-                onTouchEnd={endDraw}
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearSignature}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Clear Signature
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* ── SITE PHOTOS ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <ImagePlus className="w-5 h-5 text-accent-yellow" />
-          Site Photos
-        </h2>
-        <div className="space-y-4">
-          {/* Hidden file input */}
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handlePhotoSelect}
-          />
-          <Button
-            variant="outline"
-            onClick={() => photoInputRef.current?.click()}
-            className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10"
+      <div className={sectionClass("photos")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("photos")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Site Photos
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "photos" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <ImagePlus className="w-4 h-4 mr-2" />
-            Add Photos
-          </Button>
-
-          {/* Photo thumbnails grid */}
-          {sitePhotos.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {sitePhotos.map((photo, index) => (
-                <div key={index} className="relative group aspect-square rounded-md overflow-hidden border border-border bg-background">
-                  <img
-                    src={photo.dataUrl}
-                    alt={`Site photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    onClick={() => removePhoto(index)}
-                    className="absolute top-1 right-1 bg-black/70 hover:bg-black/90 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Remove photo"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs text-center py-0.5">
-                    Photo {index + 1}
-                  </div>
-                </div>
-              ))}
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "photos" && (
+          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
+            <div>
+              <label className={`${labelClass} cursor-pointer`}>
+                <span className={addBtnClass} style={{ display: "inline-flex" }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Photos
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                />
+              </label>
             </div>
-          )}
-        </div>
+            {formState.sitePhotos.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {formState.sitePhotos.map((photo) => (
+                  <div key={photo.id} className="relative group">
+                    <img
+                      src={photo.preview}
+                      alt={photo.caption || "Site photo"}
+                      className="w-full h-32 object-cover rounded border border-border"
+                    />
+                    <button
+                      onClick={() => removePhoto(photo.id)}
+                      className="absolute top-1 right-1 bg-black/70 text-white rounded px-1.5 py-0.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                    >
+                      ✕
+                    </button>
+                    <input
+                      type="text"
+                      className={`${inputClass} mt-1 text-xs`}
+                      value={photo.caption}
+                      onChange={(e) => updatePhotoCaption(photo.id, e.target.value)}
+                      placeholder="Caption (optional)"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ── ACTION BUTTONS ── */}
-      <div className="flex flex-wrap gap-3 justify-end pb-8">
-        {saveMessage && (
-          <span className="self-center text-sm text-accent-yellow">{saveMessage}</span>
+      {/* ── SIGNATURE (LAST) ── */}
+      <div className={sectionClass("signature")}>
+        <button className={sectionHeaderClass} onClick={() => toggleSection("signature")}>
+          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+            Signature
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "signature" ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {activeSection === "signature" && (
+          <div className="border border-t-0 border-border rounded-b p-4 space-y-4 bg-surface">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Signatory Name</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.signatoryName}
+                  onChange={(e) => updateField("signatoryName", e.target.value)}
+                  placeholder="Full name"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Title</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={formState.signatoryTitle}
+                  onChange={(e) => updateField("signatoryTitle", e.target.value)}
+                  placeholder="Job title"
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelClass}>Signature</label>
+              <div className="signature-container border border-border rounded overflow-hidden">
+                <canvas
+                  ref={signatureCanvasRef}
+                  width={800}
+                  height={200}
+                  className="w-full h-32 cursor-crosshair touch-none"
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                />
+              </div>
+              <button
+                onClick={clearSignature}
+                className="mt-2 text-xs text-muted-foreground hover:text-accent-yellow transition-colors underline"
+              >
+                Clear Signature
+              </button>
+            </div>
+          </div>
         )}
-        <Button
-          variant="outline"
-          onClick={resetForm}
-          className="border-border text-muted-foreground hover:text-foreground"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Reset
-        </Button>
-        <Button
-          variant="outline"
-          onClick={saveToStorage}
-          disabled={isSaving}
-          className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10"
-        >
-          {isSaving ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4 mr-2" />
-          )}
-          Save Draft
-        </Button>
-        <Button
-          onClick={handleGeneratePDF}
-          disabled={isGenerating}
-          className="btn-primary"
-        >
-          {isGenerating ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <FileText className="w-4 h-4 mr-2" />
-          )}
-          Generate PDF
-        </Button>
       </div>
     </div>
   );

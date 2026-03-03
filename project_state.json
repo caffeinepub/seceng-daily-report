@@ -1,44 +1,48 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Construction/project management app with fields for Project Manager and Location Contact.",
+  "summary": "Project with text/label editing: renaming PERSONNEL to TECHNICAL TEAM, LOCATION CONTACT to POINT OF CONTACT, and reordering SIGNATURE to be the last item in a list.",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-a-project-manager-text-input-field-to-the-reportform-component-in-the-project-info-section-allowing-users-to-enter-the-project-manager-s-name-include-this-field-in-the-reportdata-interface-and-render-it-in-the-generated-pdf-under-the-project-info-section",
-      "title": "Add a 'Project Manager' text input field to the ReportForm component in the Project Info section, allowing users to enter the project manager's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
+      "id": "feature-in-the-reportform-component-and-any-related-ui-change-all-occurrences-of-the-label-heading-text-personnel-to-technical-team",
+      "title": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'PERSONNEL' to 'TECHNICAL TEAM'.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-location-contact-text-input-field-to-the-reportform-component-in-the-project-info-section-allowing-users-to-enter-the-on-site-location-contact-s-name-include-this-field-in-the-reportdata-interface-and-render-it-in-the-generated-pdf-under-the-project-info-section",
-      "title": "Add a 'Location Contact' text input field to the ReportForm component in the Project Info section, allowing users to enter the on-site location contact's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
+      "id": "feature-in-the-reportform-component-and-any-related-ui-change-all-occurrences-of-the-label-heading-text-location-contact-to-point-of-contact",
+      "title": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'LOCATION CONTACT' to 'POINT OF CONTACT'.",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-reorder-the-form-sections-in-reportform-so-that-the-signature-section-is-rendered-last-after-all-other-sections",
+      "title": "Reorder the form sections in ReportForm so that the 'SIGNATURE' section is rendered last, after all other sections.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
-      "id": "AR-1",
-      "summary": "Add Project Manager field",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Add Location Contact field",
-      "reqIds": [],
+      "id": "AR-4",
+      "summary": "Update the PDF generator (pdfGenerator.ts) to reflect all three changes: use 'TECHNICAL TEAM' instead of 'PERSONNEL', 'POINT OF CONTACT' instead of 'LOCATION CONTACT', and render the SIGNATURE section last in the generated PDF.",
+      "reqIds": [
+        "REQ-4"
+      ],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Field Report App",
+  "projectName": "Field Report Form",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

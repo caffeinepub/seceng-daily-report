@@ -1,305 +1,486 @@
-// PDF Generation Utility using jsPDF (loaded via CDN in index.html)
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-declare const window: Window & { jspdf?: { jsPDF: any } };
-
 export interface ReportData {
-  // Project Info
   projectName: string;
   projectNumber: string;
   projectAddress: string;
   projectManager: string;
-  locationContact: string;
-  // Punch times (top-level / general)
-  punchInDate: string;
-  punchInTime: string;
-  punchOutDate: string;
-  punchOutTime: string;
-  // Personnel
-  leadTechName: string;
-  assistTechName: string;
-  additionalTechs: Array<{
+  locationContact: string; // displayed as "Point of Contact"
+  reportDate: string;
+  reportNumber: string;
+  weatherConditions: string;
+  temperature: string;
+  personnel: Array<{
+    id: string;
     name: string;
-    punchInDate: string;
-    punchInTime: string;
-    punchOutDate: string;
-    punchOutTime: string;
+    role: string;
+    hoursWorked: string;
+    company: string;
   }>;
-  // Work Details
   workPerformed: string;
-  materialsUsed: string;
-  equipmentUsed: string;
-  // Status
-  workStatus: string;
-  percentComplete: string;
-  // Notes
-  safetyNotes: string;
-  additionalNotes: string;
-  // Signature
-  signatureName: string;
-  signatureTitle: string;
+  materialsUsed: Array<{
+    id: string;
+    description: string;
+    quantity: string;
+    unit: string;
+  }>;
+  equipmentUsed: Array<{
+    id: string;
+    description: string;
+    quantity: string;
+    hours: string;
+  }>;
+  safetyObservations: string;
+  incidents: string;
+  nearMisses: string;
+  issuesDelays: string;
+  visitors: Array<{
+    id: string;
+    name: string;
+    company: string;
+    purpose: string;
+    timeIn: string;
+    timeOut: string;
+  }>;
+  sitePhotos: Array<{
+    id: string;
+    file: File;
+    caption: string;
+    preview: string;
+  }>;
   signatureData: string;
-  // Site Photos (data URLs)
-  sitePhotos?: string[];
+  signatoryName: string;
+  signatoryTitle: string;
+}
+
+// Colors
+const COLORS = {
+  black: [0, 0, 0] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
+  yellow: [245, 158, 11] as [number, number, number],
+  darkGray: [30, 30, 30] as [number, number, number],
+  medGray: [60, 60, 60] as [number, number, number],
+  lightGray: [120, 120, 120] as [number, number, number],
+  veryLightGray: [220, 220, 220] as [number, number, number],
+  offWhite: [245, 245, 245] as [number, number, number],
+  sectionBg: [240, 240, 240] as [number, number, number],
+};
+
+const PAGE_W = 210;
+const PAGE_H = 297;
+const MARGIN = 14;
+const CONTENT_W = PAGE_W - MARGIN * 2;
+
+function getJsPDF() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any;
+  if (w.jspdf?.jsPDF) return w.jspdf.jsPDF;
+  if (w.jsPDF) return w.jsPDF;
+  throw new Error("jsPDF not loaded");
 }
 
 export async function generatePDF(data: ReportData): Promise<void> {
-  const jsPDFLib = window.jspdf;
-  if (!jsPDFLib) throw new Error('jsPDF not loaded');
-  const { jsPDF } = jsPDFLib;
+  const jsPDF = getJsPDF();
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const margin = 48;
-  const contentW = pageW - margin * 2;
-  let y = margin;
-
-  // ── spacing constants ─────────────────────────────────────────────────────
-  const SECTION_GAP = 18;         // space between end of one section and next header
-  const HEADER_H = 26;            // height of the dark section header bar
-  const HEADER_BOTTOM_PAD = 16;   // space below header bar before first field label baseline
-  const LABEL_FONT_SIZE = 8;      // pt — grey uppercase label
-  const VALUE_FONT_SIZE = 10.5;   // pt — field value text
-  const LABEL_TO_VALUE_GAP = 14;  // pt — from label baseline to first value line baseline
-  const VALUE_LINE_H = 16;        // pt — line height between value lines (for multi-line values)
-  const FIELD_BOTTOM_PAD = 12;    // pt — space after last value line before next label
-  const SUB_HEADER_FONT_SIZE = 9; // pt — amber sub-section header
-  const SUB_HEADER_BOTTOM = 18;   // pt — from sub-header baseline to first label baseline
+  let y = MARGIN;
 
   // ── helpers ──────────────────────────────────────────────────────────────
-  const checkPage = (needed: number) => {
-    if (y + needed > pageH - 50) {
+
+  function checkPageBreak(needed = 10) {
+    if (y + needed > PAGE_H - MARGIN) {
       doc.addPage();
-      y = margin;
+      y = MARGIN;
     }
-  };
+  }
 
-  const sectionHeader = (title: string) => {
-    checkPage(HEADER_H + HEADER_BOTTOM_PAD + 30);
-    doc.setFillColor(30, 30, 30);
-    doc.rect(margin, y, contentW, HEADER_H, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(245, 158, 11); // amber
-    doc.text(title.toUpperCase(), margin + 10, y + 17);
-    y += HEADER_H + HEADER_BOTTOM_PAD;
-  };
+  function drawSectionHeader(title: string) {
+    checkPageBreak(12);
+    doc.setFillColor(...COLORS.darkGray);
+    doc.rect(MARGIN, y, CONTENT_W, 8, "F");
+    doc.setTextColor(...COLORS.yellow);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text(title, MARGIN + 3, y + 5.5);
+    doc.setTextColor(...COLORS.black);
+    y += 10;
+  }
 
-  /**
-   * Render a labelled field.
-   * jsPDF text() with an array renders lines at the given y using the current
-   * font's internal line-height. We render each line manually so we fully
-   * control the vertical rhythm and avoid overlap / excessive gaps.
-   */
-  const fieldRow = (label: string, value: string, x = margin, w = contentW) => {
-    const lines: string[] = doc.splitTextToSize(value || '—', w);
-    const totalValueH = lines.length * VALUE_LINE_H;
-    const needed = LABEL_TO_VALUE_GAP + totalValueH + FIELD_BOTTOM_PAD;
-    checkPage(needed + 10);
-
-    // Label
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(LABEL_FONT_SIZE);
-    doc.setTextColor(110, 110, 110);
+  function drawField(label: string, value: string, x: number, w: number) {
+    checkPageBreak(14);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.lightGray);
     doc.text(label.toUpperCase(), x, y);
-    y += LABEL_TO_VALUE_GAP;
+    y += 3.5;
+    doc.setFillColor(...COLORS.offWhite);
+    doc.rect(x, y, w, 7, "F");
+    doc.setDrawColor(...COLORS.veryLightGray);
+    doc.rect(x, y, w, 7, "S");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...COLORS.darkGray);
+    const lines = doc.splitTextToSize(value || "—", w - 4);
+    doc.text(lines[0] || "—", x + 2, y + 4.8);
+    y += 9;
+  }
 
-    // Value lines — rendered one-by-one for precise spacing
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(VALUE_FONT_SIZE);
-    doc.setTextColor(25, 25, 25);
-    for (const line of lines) {
-      checkPage(VALUE_LINE_H + FIELD_BOTTOM_PAD);
-      doc.text(line, x, y);
-      y += VALUE_LINE_H;
-    }
-
-    y += FIELD_BOTTOM_PAD;
-  };
-
-  const twoCol = (
-    label1: string, val1: string,
-    label2: string, val2: string
-  ) => {
-    const half = (contentW - 16) / 2;
-    const startY = y;
-    fieldRow(label1, val1, margin, half);
-    const leftEndY = y;
-    y = startY;
-    fieldRow(label2, val2, margin + half + 16, half);
-    y = Math.max(leftEndY, y);
-  };
+  function drawTextArea(label: string, value: string) {
+    const lines = doc.splitTextToSize(value || "—", CONTENT_W - 6);
+    const boxH = Math.max(12, lines.length * 4.5 + 5);
+    checkPageBreak(boxH + 8);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.lightGray);
+    doc.text(label.toUpperCase(), MARGIN, y);
+    y += 3.5;
+    doc.setFillColor(...COLORS.offWhite);
+    doc.rect(MARGIN, y, CONTENT_W, boxH, "F");
+    doc.setDrawColor(...COLORS.veryLightGray);
+    doc.rect(MARGIN, y, CONTENT_W, boxH, "S");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...COLORS.darkGray);
+    doc.text(lines, MARGIN + 3, y + 4.5);
+    y += boxH + 4;
+  }
 
   // ── HEADER ───────────────────────────────────────────────────────────────
-  doc.setFillColor(15, 15, 15);
-  doc.rect(0, 0, pageW, 76, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.setTextColor(245, 158, 11);
-  doc.text('SECURITY ENGINEERING INC.', margin, 34);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(200, 200, 200);
-  doc.text('Daily Field Report', margin, 56);
-  const generatedStr = `Generated: ${new Date().toLocaleString()}`;
+
+  // Logo area
+  try {
+    const logoUrl = "/assets/generated/seceng-logo.dim_256x256.png";
+    const resp = await fetch(logoUrl);
+    if (resp.ok) {
+      const blob = await resp.blob();
+      const reader = new FileReader();
+      const logoData = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      doc.addImage(logoData, "PNG", MARGIN, y, 18, 18);
+    }
+  } catch {
+    // logo optional
+  }
+
+  // Company name + report title
+  doc.setFillColor(...COLORS.darkGray);
+  doc.rect(MARGIN + 20, y, CONTENT_W - 20, 18, "F");
+  doc.setTextColor(...COLORS.yellow);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text("SECENG", MARGIN + 24, y + 7);
+  doc.setTextColor(...COLORS.white);
   doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text(generatedStr, pageW - margin - doc.getTextWidth(generatedStr), 56);
-  y = 76 + SECTION_GAP;
+  doc.setFont("helvetica", "normal");
+  doc.text("DAILY FIELD REPORT", MARGIN + 24, y + 13);
 
-  // ── PUNCH SECTION ────────────────────────────────────────────────────────
-  sectionHeader('Punch');
-  const punchIn = `${data.punchInDate || '—'} ${data.punchInTime || ''}`.trim();
-  const punchOut = `${data.punchOutDate || '—'} ${data.punchOutTime || ''}`.trim();
-  twoCol('Punch In', punchIn, 'Punch Out', punchOut);
-  y += SECTION_GAP;
+  // Report meta (top right)
+  const metaX = PAGE_W - MARGIN - 55;
+  doc.setTextColor(...COLORS.lightGray);
+  doc.setFontSize(6.5);
+  doc.text(`DATE: ${data.reportDate || "—"}`, metaX, y + 5);
+  doc.text(`REPORT #: ${data.reportNumber || "—"}`, metaX, y + 10);
+  doc.text(`WEATHER: ${data.weatherConditions || "—"}`, metaX, y + 15);
 
-  // ── PROJECT INFORMATION ──────────────────────────────────────────────────
-  sectionHeader('Project Information');
-  twoCol('Project Name', data.projectName, 'Project Number', data.projectNumber);
-  fieldRow('Project Address', data.projectAddress);
-  twoCol('Project Manager', data.projectManager, 'Location Contact', data.locationContact);
-  y += SECTION_GAP;
+  y += 22;
 
-  // ── PERSONNEL ────────────────────────────────────────────────────────────
-  sectionHeader('Personnel');
+  // ── PROJECT INFORMATION ───────────────────────────────────────────────────
 
-  // Lead Tech
-  checkPage(SUB_HEADER_BOTTOM + 50);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(SUB_HEADER_FONT_SIZE);
-  doc.setTextColor(245, 158, 11);
-  doc.text('LEAD TECHNICIAN', margin, y);
-  y += SUB_HEADER_BOTTOM;
-  fieldRow('Name', data.leadTechName);
-  y += 6;
+  drawSectionHeader("PROJECT INFORMATION");
 
-  // Assist Tech
-  checkPage(SUB_HEADER_BOTTOM + 50);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(SUB_HEADER_FONT_SIZE);
-  doc.setTextColor(245, 158, 11);
-  doc.text('ASSISTANT TECHNICIAN', margin, y);
-  y += SUB_HEADER_BOTTOM;
-  fieldRow('Name', data.assistTechName);
-  y += 6;
+  // Row 1: Project Name + Project Number
+  const halfW = (CONTENT_W - 4) / 2;
+  const col2X = MARGIN + halfW + 4;
 
-  // Additional Techs
-  if (data.additionalTechs && data.additionalTechs.length > 0) {
-    data.additionalTechs.forEach((tech, i) => {
-      checkPage(SUB_HEADER_BOTTOM + 90);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(SUB_HEADER_FONT_SIZE);
-      doc.setTextColor(245, 158, 11);
-      doc.text(`TECHNICIAN ${i + 1}`, margin, y);
-      y += SUB_HEADER_BOTTOM;
-      fieldRow('Name', tech.name);
-      const techIn = `${tech.punchInDate || '—'} ${tech.punchInTime || ''}`.trim();
-      const techOut = `${tech.punchOutDate || '—'} ${tech.punchOutTime || ''}`.trim();
-      twoCol('Punch In', techIn, 'Punch Out', techOut);
+  const savedY1 = y;
+  drawField("Project Name", data.projectName, MARGIN, halfW);
+  const afterLeft1 = y;
+  y = savedY1;
+  drawField("Project Number", data.projectNumber, col2X, halfW);
+  y = Math.max(afterLeft1, y);
+
+  // Row 2: Project Address (full width)
+  drawField("Project Address", data.projectAddress, MARGIN, CONTENT_W);
+
+  // Row 3: Project Manager + Point of Contact
+  const savedY3 = y;
+  drawField("Project Manager", data.projectManager, MARGIN, halfW);
+  const afterLeft3 = y;
+  y = savedY3;
+  drawField("Point of Contact", data.locationContact, col2X, halfW);
+  y = Math.max(afterLeft3, y);
+
+  // Row 4: Temperature
+  drawField("Temperature", data.temperature ? `${data.temperature}°F` : "", MARGIN, halfW);
+
+  // ── TECHNICAL TEAM ────────────────────────────────────────────────────────
+
+  if (data.personnel.length > 0) {
+    drawSectionHeader("TECHNICAL TEAM");
+
+    // Table header
+    checkPageBreak(10);
+    doc.setFillColor(...COLORS.medGray);
+    doc.rect(MARGIN, y, CONTENT_W, 6, "F");
+    doc.setTextColor(...COLORS.white);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    const colW = [50, 40, 40, 22];
+    const colX = [MARGIN + 2, MARGIN + 52, MARGIN + 92, MARGIN + 132];
+    doc.text("NAME", colX[0], y + 4);
+    doc.text("COMPANY", colX[1], y + 4);
+    doc.text("ROLE / TRADE", colX[2], y + 4);
+    doc.text("HOURS", colX[3], y + 4);
+    y += 7;
+
+    data.personnel.forEach((p, i) => {
+      checkPageBreak(7);
+      if (i % 2 === 0) {
+        doc.setFillColor(...COLORS.offWhite);
+        doc.rect(MARGIN, y, CONTENT_W, 6, "F");
+      }
+      doc.setTextColor(...COLORS.darkGray);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(p.name || "—", colW[0] - 2)[0], colX[0], y + 4);
+      doc.text(doc.splitTextToSize(p.company || "—", colW[1] - 2)[0], colX[1], y + 4);
+      doc.text(doc.splitTextToSize(p.role || "—", colW[2] - 2)[0], colX[2], y + 4);
+      doc.text(p.hoursWorked || "—", colX[3], y + 4);
       y += 6;
     });
+    y += 4;
   }
-  y += SECTION_GAP;
 
-  // ── WORK DETAILS ─────────────────────────────────────────────────────────
-  sectionHeader('Work Details');
-  fieldRow('Work Performed', data.workPerformed);
-  twoCol('Materials Used', data.materialsUsed, 'Equipment Used', data.equipmentUsed);
-  y += SECTION_GAP;
+  // ── WORK PERFORMED ────────────────────────────────────────────────────────
 
-  // ── STATUS ───────────────────────────────────────────────────────────────
-  sectionHeader('Status');
-  twoCol('Work Status', data.workStatus, 'Percent Complete', data.percentComplete);
-  y += SECTION_GAP;
-
-  // ── NOTES ────────────────────────────────────────────────────────────────
-  sectionHeader('Notes');
-  fieldRow('Safety Notes', data.safetyNotes);
-  fieldRow('Additional Notes', data.additionalNotes);
-  y += SECTION_GAP;
-
-  // ── SIGNATURE ────────────────────────────────────────────────────────────
-  sectionHeader('Signature');
-  twoCol('Name', data.signatureName, 'Title', data.signatureTitle);
-  if (data.signatureData && data.signatureData !== 'data:,') {
-    checkPage(90);
-    // Light border box around signature
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.5);
-    doc.rect(margin, y, 220, 70);
-    doc.addImage(data.signatureData, 'PNG', margin + 4, y + 4, 212, 62);
-    y += 82;
+  if (data.workPerformed) {
+    drawSectionHeader("WORK PERFORMED");
+    drawTextArea("Description", data.workPerformed);
   }
-  y += SECTION_GAP;
 
-  // ── SITE PHOTOS ──────────────────────────────────────────────────────────
-  if (data.sitePhotos && data.sitePhotos.length > 0) {
-    sectionHeader('Site Photos');
+  // ── MATERIALS USED ────────────────────────────────────────────────────────
 
-    // Layout: 2 photos per row
-    const PHOTOS_PER_ROW = 2;
-    const PHOTO_GAP = 12;
-    const photoW = (contentW - PHOTO_GAP * (PHOTOS_PER_ROW - 1)) / PHOTOS_PER_ROW;
-    const photoH = photoW * 0.75; // 4:3 aspect ratio
-    const CAPTION_H = 16;
-    const ROW_BOTTOM_PAD = 14;
+  if (data.materialsUsed.length > 0) {
+    drawSectionHeader("MATERIALS USED");
 
-    for (let i = 0; i < data.sitePhotos.length; i += PHOTOS_PER_ROW) {
-      const rowPhotos = data.sitePhotos.slice(i, i + PHOTOS_PER_ROW);
-      const rowNeeded = photoH + CAPTION_H + ROW_BOTTOM_PAD;
-      checkPage(rowNeeded + 10);
+    checkPageBreak(10);
+    doc.setFillColor(...COLORS.medGray);
+    doc.rect(MARGIN, y, CONTENT_W, 6, "F");
+    doc.setTextColor(...COLORS.white);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.text("DESCRIPTION", MARGIN + 2, y + 4);
+    doc.text("QTY", MARGIN + 120, y + 4);
+    doc.text("UNIT", MARGIN + 145, y + 4);
+    y += 7;
 
-      rowPhotos.forEach((photoDataUrl, colIdx) => {
-        const x = margin + colIdx * (photoW + PHOTO_GAP);
+    data.materialsUsed.forEach((m, i) => {
+      checkPageBreak(7);
+      if (i % 2 === 0) {
+        doc.setFillColor(...COLORS.offWhite);
+        doc.rect(MARGIN, y, CONTENT_W, 6, "F");
+      }
+      doc.setTextColor(...COLORS.darkGray);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(m.description || "—", 115)[0], MARGIN + 2, y + 4);
+      doc.text(m.quantity || "—", MARGIN + 120, y + 4);
+      doc.text(m.unit || "—", MARGIN + 145, y + 4);
+      y += 6;
+    });
+    y += 4;
+  }
 
-        // Determine image format from data URL
-        let imgFormat = 'JPEG';
-        if (photoDataUrl.startsWith('data:image/png')) imgFormat = 'PNG';
-        else if (photoDataUrl.startsWith('data:image/webp')) imgFormat = 'WEBP';
+  // ── EQUIPMENT USED ────────────────────────────────────────────────────────
+
+  if (data.equipmentUsed.length > 0) {
+    drawSectionHeader("EQUIPMENT USED");
+
+    checkPageBreak(10);
+    doc.setFillColor(...COLORS.medGray);
+    doc.rect(MARGIN, y, CONTENT_W, 6, "F");
+    doc.setTextColor(...COLORS.white);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.text("DESCRIPTION", MARGIN + 2, y + 4);
+    doc.text("QTY", MARGIN + 120, y + 4);
+    doc.text("HOURS", MARGIN + 145, y + 4);
+    y += 7;
+
+    data.equipmentUsed.forEach((e, i) => {
+      checkPageBreak(7);
+      if (i % 2 === 0) {
+        doc.setFillColor(...COLORS.offWhite);
+        doc.rect(MARGIN, y, CONTENT_W, 6, "F");
+      }
+      doc.setTextColor(...COLORS.darkGray);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(e.description || "—", 115)[0], MARGIN + 2, y + 4);
+      doc.text(e.quantity || "—", MARGIN + 120, y + 4);
+      doc.text(e.hours || "—", MARGIN + 145, y + 4);
+      y += 6;
+    });
+    y += 4;
+  }
+
+  // ── SAFETY OBSERVATIONS ───────────────────────────────────────────────────
+
+  if (data.safetyObservations || data.incidents || data.nearMisses) {
+    drawSectionHeader("SAFETY OBSERVATIONS");
+    if (data.safetyObservations) drawTextArea("Observations", data.safetyObservations);
+    if (data.incidents) drawTextArea("Incidents", data.incidents);
+    if (data.nearMisses) drawTextArea("Near Misses", data.nearMisses);
+  }
+
+  // ── ISSUES & DELAYS ───────────────────────────────────────────────────────
+
+  if (data.issuesDelays) {
+    drawSectionHeader("ISSUES & DELAYS");
+    drawTextArea("Description", data.issuesDelays);
+  }
+
+  // ── VISITORS ─────────────────────────────────────────────────────────────
+
+  if (data.visitors.length > 0) {
+    drawSectionHeader("VISITORS");
+
+    checkPageBreak(10);
+    doc.setFillColor(...COLORS.medGray);
+    doc.rect(MARGIN, y, CONTENT_W, 6, "F");
+    doc.setTextColor(...COLORS.white);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.text("NAME", MARGIN + 2, y + 4);
+    doc.text("COMPANY", MARGIN + 45, y + 4);
+    doc.text("PURPOSE", MARGIN + 90, y + 4);
+    doc.text("IN", MARGIN + 140, y + 4);
+    doc.text("OUT", MARGIN + 158, y + 4);
+    y += 7;
+
+    data.visitors.forEach((v, i) => {
+      checkPageBreak(7);
+      if (i % 2 === 0) {
+        doc.setFillColor(...COLORS.offWhite);
+        doc.rect(MARGIN, y, CONTENT_W, 6, "F");
+      }
+      doc.setTextColor(...COLORS.darkGray);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(v.name || "—", 40)[0], MARGIN + 2, y + 4);
+      doc.text(doc.splitTextToSize(v.company || "—", 42)[0], MARGIN + 45, y + 4);
+      doc.text(doc.splitTextToSize(v.purpose || "—", 47)[0], MARGIN + 90, y + 4);
+      doc.text(v.timeIn || "—", MARGIN + 140, y + 4);
+      doc.text(v.timeOut || "—", MARGIN + 158, y + 4);
+      y += 6;
+    });
+    y += 4;
+  }
+
+  // ── SITE PHOTOS ───────────────────────────────────────────────────────────
+
+  if (data.sitePhotos.length > 0) {
+    drawSectionHeader("SITE PHOTOS");
+
+    const photoW = (CONTENT_W - 4) / 2;
+    const photoH = 55;
+
+    for (let i = 0; i < data.sitePhotos.length; i += 2) {
+      checkPageBreak(photoH + 14);
+
+      const photos = [data.sitePhotos[i], data.sitePhotos[i + 1]].filter(Boolean);
+
+      for (let j = 0; j < photos.length; j++) {
+        const photo = photos[j];
+        const px = MARGIN + j * (photoW + 4);
 
         try {
-          doc.addImage(photoDataUrl, imgFormat, x, y, photoW, photoH);
+          const reader = new FileReader();
+          const imgData = await new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(photo.file);
+          });
+
+          doc.addImage(imgData, "JPEG", px, y, photoW, photoH);
         } catch {
-          // If format detection fails, try JPEG as fallback
-          try {
-            doc.addImage(photoDataUrl, 'JPEG', x, y, photoW, photoH);
-          } catch {
-            // Draw placeholder box if image fails
-            doc.setFillColor(50, 50, 50);
-            doc.rect(x, y, photoW, photoH, 'F');
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            doc.setTextColor(150, 150, 150);
-            doc.text('Image unavailable', x + photoW / 2, y + photoH / 2, { align: 'center' });
-          }
+          doc.setFillColor(...COLORS.sectionBg);
+          doc.rect(px, y, photoW, photoH, "F");
+          doc.setTextColor(...COLORS.lightGray);
+          doc.setFontSize(7);
+          doc.text("Image unavailable", px + photoW / 2, y + photoH / 2, { align: "center" });
         }
 
-        // Caption: "Photo N"
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(110, 110, 110);
-        doc.text(`Photo ${i + colIdx + 1}`, x, y + photoH + 11);
-      });
+        if (photo.caption) {
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(...COLORS.lightGray);
+          doc.text(
+            doc.splitTextToSize(photo.caption, photoW)[0],
+            px,
+            y + photoH + 4
+          );
+        }
+      }
 
-      y += photoH + CAPTION_H + ROW_BOTTOM_PAD;
+      y += photoH + 10;
     }
+    y += 4;
   }
 
-  // ── FOOTER ───────────────────────────────────────────────────────────────
+  // ── SIGNATURE (LAST) ─────────────────────────────────────────────────────
+
+  drawSectionHeader("SIGNATURE");
+
+  checkPageBreak(45);
+
+  // Signatory info
+  const savedYSig = y;
+  drawField("Signatory Name", data.signatoryName, MARGIN, halfW);
+  const afterSigLeft = y;
+  y = savedYSig;
+  drawField("Title", data.signatoryTitle, col2X, halfW);
+  y = Math.max(afterSigLeft, y);
+
+  // Signature image
+  if (data.signatureData) {
+    checkPageBreak(35);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.lightGray);
+    doc.text("SIGNATURE", MARGIN, y);
+    y += 3.5;
+    doc.setFillColor(...COLORS.offWhite);
+    doc.rect(MARGIN, y, CONTENT_W, 28, "F");
+    doc.setDrawColor(...COLORS.veryLightGray);
+    doc.rect(MARGIN, y, CONTENT_W, 28, "S");
+    try {
+      doc.addImage(data.signatureData, "PNG", MARGIN + 2, y + 2, CONTENT_W - 4, 24);
+    } catch {
+      // signature draw failed
+    }
+    y += 32;
+  }
+
+  // ── FOOTER ────────────────────────────────────────────────────────────────
+
   const totalPages = doc.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
-    doc.setFillColor(15, 15, 15);
-    doc.rect(0, pageH - 32, pageW, 32, 'F');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(120, 120, 120);
-    doc.text('Security Engineering Inc. — Daily Field Report', margin, pageH - 11);
-    doc.text(`Page ${p} of ${totalPages}`, pageW - margin - 50, pageH - 11);
+    doc.setDrawColor(...COLORS.veryLightGray);
+    doc.line(MARGIN, PAGE_H - 10, PAGE_W - MARGIN, PAGE_H - 10);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...COLORS.lightGray);
+    doc.text(
+      `SECENG Daily Field Report — Generated ${new Date().toLocaleDateString()}`,
+      MARGIN,
+      PAGE_H - 6
+    );
+    doc.text(`Page ${p} of ${totalPages}`, PAGE_W - MARGIN, PAGE_H - 6, { align: "right" });
   }
 
-  const reportDate = data.punchInDate || new Date().toISOString().split('T')[0];
-  doc.save(`field-report-${reportDate}.pdf`);
+  const filename = `SECENG_DFR_${data.projectNumber || "DRAFT"}_${data.reportDate || "undated"}.pdf`;
+  doc.save(filename);
 }
