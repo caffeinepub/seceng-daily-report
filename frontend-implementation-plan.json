@@ -1,66 +1,44 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Rename labels and reorder SIGNATURE section",
+  "title": "Add Site Photos column, Point of Contact, and Project Manager fields",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Change all occurrences of 'PERSONNEL' label to 'TECHNICAL TEAM' in the ReportForm component",
+      "summary": "Add SITE PHOTOS column before SIGNATURE column in PDF table layout with embedded base64 thumbnails",
       "acceptanceCriteria": [
-        "The word 'PERSONNEL' no longer appears as a visible label or section heading in the form UI.",
-        "The section heading now reads 'TECHNICAL TEAM'."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Update the section heading text from 'PERSONNEL' to 'TECHNICAL TEAM' in the form UI. Locate all instances of the 'PERSONNEL' string used as a label or heading and replace with 'TECHNICAL TEAM'."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Change all occurrences of 'LOCATION CONTACT' label to 'POINT OF CONTACT' in the ReportForm component",
-      "acceptanceCriteria": [
-        "The text 'LOCATION CONTACT' no longer appears as a visible label or section heading in the form UI.",
-        "The section heading now reads 'POINT OF CONTACT'."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Update the section heading text from 'LOCATION CONTACT' to 'POINT OF CONTACT' in the form UI. Locate all instances of the 'LOCATION CONTACT' string used as a label or heading and replace with 'POINT OF CONTACT'."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Reorder form sections so SIGNATURE section appears last after all other sections",
-      "acceptanceCriteria": [
-        "The SIGNATURE section appears at the bottom of the form, after every other section.",
-        "No other section ordering is changed."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Reorder the JSX structure in the ReportForm component so that the SIGNATURE section is rendered last, after all other form sections (project info, technical team, materials, equipment, safety, visitors, photos). Move the SIGNATURE section JSX block to the end while preserving all other section order."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Update PDF generator to use new labels and SIGNATURE section order",
-      "acceptanceCriteria": [
-        "Generated PDFs display 'TECHNICAL TEAM' instead of 'PERSONNEL'.",
-        "Generated PDFs display 'POINT OF CONTACT' instead of 'LOCATION CONTACT'.",
-        "The SIGNATURE section appears last in the generated PDF."
+        "The generated PDF includes a SITE PHOTOS column header",
+        "The SITE PHOTOS column appears to the left of the SIGNATURE column",
+        "Uploaded site photos are rendered as embedded images within the SITE PHOTOS column cells in the PDF"
       ],
       "file_operations": [
         {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Update the PDF generation function to reflect all label changes and section reordering. Replace 'PERSONNEL' with 'TECHNICAL TEAM', replace 'LOCATION CONTACT' with 'POINT OF CONTACT', and ensure the SIGNATURE section is rendered last in the PDF output after all other sections."
+          "description": "Modify the generatePDF function to add a SITE PHOTOS column in the table layout. Position the new column immediately before the existing SIGNATURE column. Within the SITE PHOTOS column cells, embed the site photo thumbnails as base64 images using the sitePhotos array from ReportData. Ensure proper column width allocation and image scaling to fit within the cell boundaries while maintaining aspect ratio."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add Point of Contact and Project Manager input fields with localStorage persistence and PDF inclusion",
+      "acceptanceCriteria": [
+        "ReportForm displays a labeled 'Point of Contact' text input field",
+        "ReportForm displays a labeled 'Project Manager' text input field",
+        "Both fields persist their values to localStorage",
+        "Both fields' values appear in the generated PDF report under project info or a dedicated section",
+        "Fields are cleared/reset when the form is reset"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/pdfGenerator.ts",
+          "operation": "modify",
+          "description": "Extend the ReportData interface to include pointOfContact and projectManager as optional string fields. Update the generatePDF function to display these values in the project information section of the PDF, positioned appropriately among the existing project metadata fields."
+        },
+        {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Add pointOfContact and projectManager state fields to the component. Add labeled text input controls for 'Point of Contact' and 'Project Manager' in the project information section of the form, positioned logically near other project metadata fields. Update the localStorage save and load logic to persist these two new fields alongside existing form data. Include both fields in the ReportData object passed to generatePDF. Ensure both fields are cleared when the form reset handler is invoked."
         }
       ]
     }

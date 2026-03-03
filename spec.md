@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Rename two section labels and move the SIGNATURE section to the end of the form, both in the UI and in the PDF generator.
+**Goal:** Add a Site Photos column to the PDF report table and add Point of Contact and Project Manager input fields to the report form.
 
 **Planned changes:**
-- Rename the "PERSONNEL" section label to "TECHNICAL TEAM" in the form UI and generated PDF.
-- Rename the "LOCATION CONTACT" section label to "POINT OF CONTACT" in the form UI and generated PDF.
-- Move the "SIGNATURE" section to be the last section in both the form UI and the generated PDF.
+- Add a "SITE PHOTOS" column to the PDF report table, positioned immediately before the "SIGNATURE" column, rendering uploaded photo thumbnails as embedded images in the PDF
+- Add a "Point of Contact" text input field to the ReportForm that persists to localStorage and appears in the generated PDF
+- Add a "Project Manager" text input field to the ReportForm that persists to localStorage and appears in the generated PDF
+- Both new fields are cleared when the form is reset
 
-**User-visible outcome:** The form and any generated PDFs will display "TECHNICAL TEAM" and "POINT OF CONTACT" as section headings, with the SIGNATURE section appearing at the bottom.
+**User-visible outcome:** Users can fill in Point of Contact and Project Manager names in the form, and the generated PDF report will display those names as well as a dedicated Site Photos column showing uploaded photo thumbnails.

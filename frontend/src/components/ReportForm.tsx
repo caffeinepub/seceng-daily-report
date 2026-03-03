@@ -1,1084 +1,739 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { generatePDF } from "../utils/pdfGenerator";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Camera, FileText, Plus, Trash2, X, Upload, ImageIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { generatePDF, ReportData } from "../utils/pdfGenerator";
 
-interface FormState {
-  // Project Information
-  projectName: string;
-  projectNumber: string;
-  projectAddress: string;
-  projectManager: string;
-  locationContact: string;
-  reportDate: string;
-  reportNumber: string;
-  weatherConditions: string;
-  temperature: string;
-
-  // Technical Team
-  personnel: Array<{
-    id: string;
-    name: string;
-    role: string;
-    hoursWorked: string;
-    company: string;
-  }>;
-
-  // Work Performed
-  workPerformed: string;
-
-  // Materials Used
-  materialsUsed: Array<{
-    id: string;
-    description: string;
-    quantity: string;
-    unit: string;
-  }>;
-
-  // Equipment Used
-  equipmentUsed: Array<{
-    id: string;
-    description: string;
-    quantity: string;
-    hours: string;
-  }>;
-
-  // Safety Observations
-  safetyObservations: string;
-  incidents: string;
-  nearMisses: string;
-
-  // Issues and Delays
-  issuesDelays: string;
-
-  // Visitors
-  visitors: Array<{
-    id: string;
-    name: string;
-    company: string;
-    purpose: string;
-    timeIn: string;
-    timeOut: string;
-  }>;
-
-  // Site Photos
-  sitePhotos: Array<{
-    id: string;
-    file: File;
-    caption: string;
-    preview: string;
-  }>;
-
-  // Signature
-  signatureData: string;
-  signatoryName: string;
-  signatoryTitle: string;
+interface SitePhoto {
+  id: string;
+  dataUrl: string;
+  name: string;
 }
 
-const defaultFormState: FormState = {
+interface PersonnelEntry {
+  id: string;
+  name: string;
+  role: string;
+  hours: string;
+}
+
+interface WorkItem {
+  id: string;
+  description: string;
+  status: string;
+  notes: string;
+}
+
+interface FormData {
+  projectName: string;
+  projectNumber: string;
+  date: string;
+  weather: string;
+  temperature: string;
+  reportNumber: string;
+  preparedBy: string;
+  locationContact: string;
+  pointOfContact: string;
+  projectManager: string;
+  siteAddress: string;
+  clientName: string;
+  personnel: PersonnelEntry[];
+  workItems: WorkItem[];
+  safetyNotes: string;
+  generalNotes: string;
+  sitePhotos: SitePhoto[];
+}
+
+const STORAGE_KEY = "daily_report_form_data";
+
+const defaultFormData: FormData = {
   projectName: "",
   projectNumber: "",
-  projectAddress: "",
-  projectManager: "",
-  locationContact: "",
-  reportDate: new Date().toISOString().split("T")[0],
-  reportNumber: "",
-  weatherConditions: "",
+  date: new Date().toISOString().split("T")[0],
+  weather: "",
   temperature: "",
-  personnel: [],
-  workPerformed: "",
-  materialsUsed: [],
-  equipmentUsed: [],
-  safetyObservations: "",
-  incidents: "",
-  nearMisses: "",
-  issuesDelays: "",
-  visitors: [],
+  reportNumber: "",
+  preparedBy: "",
+  locationContact: "",
+  pointOfContact: "",
+  projectManager: "",
+  siteAddress: "",
+  clientName: "",
+  personnel: [{ id: crypto.randomUUID(), name: "", role: "", hours: "" }],
+  workItems: [{ id: crypto.randomUUID(), description: "", status: "In Progress", notes: "" }],
+  safetyNotes: "",
+  generalNotes: "",
   sitePhotos: [],
-  signatureData: "",
-  signatoryName: "",
-  signatoryTitle: "",
 };
 
-function generateId() {
-  return Math.random().toString(36).substr(2, 9);
+function loadFromStorage(): FormData {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...defaultFormData, ...parsed };
+    }
+  } catch {
+    // ignore
+  }
+  return defaultFormData;
 }
 
 export default function ReportForm() {
-  const [formState, setFormState] = useState<FormState>(() => {
-    try {
-      const saved = localStorage.getItem("dailyFieldReport");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return { ...defaultFormState, ...parsed, sitePhotos: [] };
-      }
-    } catch {
-      // ignore
-    }
-    return defaultFormState;
-  });
-
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-  const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [formData, setFormData] = useState<FormData>(loadFromStorage);
+  const [signature, setSignature] = useState<string>("");
   const [isDrawing, setIsDrawing] = useState(false);
-  const [lastPos, setLastPos] = useState<{ x: number; y: number } | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [photoError, setPhotoError] = useState<string>("");
 
-  // Save to localStorage on change (excluding photos)
-  useEffect(() => {
-    const toSave = { ...formState, sitePhotos: [] };
-    localStorage.setItem("dailyFieldReport", JSON.stringify(toSave));
-  }, [formState]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastPos = useRef<{ x: number; y: number } | null>(null);
 
-  // Restore signature from saved data
+  // Persist form data to localStorage
   useEffect(() => {
-    if (formState.signatureData && signatureCanvasRef.current) {
-      const canvas = signatureCanvasRef.current;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-        };
-        img.src = formState.signatureData;
-      }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+    } catch {
+      // Storage quota exceeded - ignore
     }
+  }, [formData]);
+
+  const updateField = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setFormState((prev) => ({ ...prev, [key]: value }));
-  };
-
-  // Personnel
+  // Personnel handlers
   const addPersonnel = () => {
-    updateField("personnel", [
-      ...formState.personnel,
-      { id: generateId(), name: "", role: "", hoursWorked: "", company: "" },
-    ]);
-  };
-
-  const updatePersonnel = (id: string, field: string, value: string) => {
-    updateField(
-      "personnel",
-      formState.personnel.map((p) => (p.id === id ? { ...p, [field]: value } : p))
-    );
+    setFormData((prev) => ({
+      ...prev,
+      personnel: [...prev.personnel, { id: crypto.randomUUID(), name: "", role: "", hours: "" }],
+    }));
   };
 
   const removePersonnel = (id: string) => {
-    updateField(
-      "personnel",
-      formState.personnel.filter((p) => p.id !== id)
-    );
-  };
-
-  // Materials
-  const addMaterial = () => {
-    updateField("materialsUsed", [
-      ...formState.materialsUsed,
-      { id: generateId(), description: "", quantity: "", unit: "" },
-    ]);
-  };
-
-  const updateMaterial = (id: string, field: string, value: string) => {
-    updateField(
-      "materialsUsed",
-      formState.materialsUsed.map((m) => (m.id === id ? { ...m, [field]: value } : m))
-    );
-  };
-
-  const removeMaterial = (id: string) => {
-    updateField(
-      "materialsUsed",
-      formState.materialsUsed.filter((m) => m.id !== id)
-    );
-  };
-
-  // Equipment
-  const addEquipment = () => {
-    updateField("equipmentUsed", [
-      ...formState.equipmentUsed,
-      { id: generateId(), description: "", quantity: "", hours: "" },
-    ]);
-  };
-
-  const updateEquipment = (id: string, field: string, value: string) => {
-    updateField(
-      "equipmentUsed",
-      formState.equipmentUsed.map((e) => (e.id === id ? { ...e, [field]: value } : e))
-    );
-  };
-
-  const removeEquipment = (id: string) => {
-    updateField(
-      "equipmentUsed",
-      formState.equipmentUsed.filter((e) => e.id !== id)
-    );
-  };
-
-  // Visitors
-  const addVisitor = () => {
-    updateField("visitors", [
-      ...formState.visitors,
-      { id: generateId(), name: "", company: "", purpose: "", timeIn: "", timeOut: "" },
-    ]);
-  };
-
-  const updateVisitor = (id: string, field: string, value: string) => {
-    updateField(
-      "visitors",
-      formState.visitors.map((v) => (v.id === id ? { ...v, [field]: value } : v))
-    );
-  };
-
-  const removeVisitor = (id: string) => {
-    updateField(
-      "visitors",
-      formState.visitors.filter((v) => v.id !== id)
-    );
-  };
-
-  // Site Photos
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const newPhotos = files.map((file) => ({
-      id: generateId(),
-      file,
-      caption: "",
-      preview: URL.createObjectURL(file),
+    setFormData((prev) => ({
+      ...prev,
+      personnel: prev.personnel.filter((p) => p.id !== id),
     }));
-    updateField("sitePhotos", [...formState.sitePhotos, ...newPhotos]);
   };
 
-  const updatePhotoCaption = (id: string, caption: string) => {
-    updateField(
-      "sitePhotos",
-      formState.sitePhotos.map((p) => (p.id === id ? { ...p, caption } : p))
-    );
+  const updatePersonnel = (id: string, field: keyof PersonnelEntry, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      personnel: prev.personnel.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+    }));
+  };
+
+  // Work item handlers
+  const addWorkItem = () => {
+    setFormData((prev) => ({
+      ...prev,
+      workItems: [
+        ...prev.workItems,
+        { id: crypto.randomUUID(), description: "", status: "In Progress", notes: "" },
+      ],
+    }));
+  };
+
+  const removeWorkItem = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      workItems: prev.workItems.filter((w) => w.id !== id),
+    }));
+  };
+
+  const updateWorkItem = (id: string, field: keyof WorkItem, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      workItems: prev.workItems.map((w) => (w.id === id ? { ...w, [field]: value } : w)),
+    }));
+  };
+
+  // Site photo handlers
+  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhotoError("");
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const maxPhotos = 20;
+    const currentCount = formData.sitePhotos.length;
+    const remaining = maxPhotos - currentCount;
+
+    if (remaining <= 0) {
+      setPhotoError(`Maximum ${maxPhotos} photos allowed.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const filesToProcess = files.slice(0, remaining);
+    if (files.length > remaining) {
+      setPhotoError(`Only ${remaining} more photo(s) can be added (max ${maxPhotos}).`);
+    }
+
+    filesToProcess.forEach((file) => {
+      if (!file.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        if (!dataUrl) return;
+        const newPhoto: SitePhoto = {
+          id: crypto.randomUUID(),
+          dataUrl,
+          name: file.name,
+        };
+        setFormData((prev) => ({
+          ...prev,
+          sitePhotos: [...prev.sitePhotos, newPhoto],
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removePhoto = (id: string) => {
-    updateField(
-      "sitePhotos",
-      formState.sitePhotos.filter((p) => p.id !== id)
-    );
+    setFormData((prev) => ({
+      ...prev,
+      sitePhotos: prev.sitePhotos.filter((p) => p.id !== id),
+    }));
+    setPhotoError("");
   };
 
-  // Signature canvas
-  const getCanvasPos = (
-    canvas: HTMLCanvasElement,
-    e: React.MouseEvent | React.TouchEvent
-  ) => {
+  const clearAllPhotos = () => {
+    setFormData((prev) => ({ ...prev, sitePhotos: [] }));
+    setPhotoError("");
+  };
+
+  // Signature canvas handlers
+  const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
     if ("touches" in e) {
       return {
-        x: (e.touches[0].clientX - rect.left) * scaleX,
-        y: (e.touches[0].clientY - rect.top) * scaleY,
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top,
       };
     }
     return {
-      x: ((e as React.MouseEvent).clientX - rect.left) * scaleX,
-      y: ((e as React.MouseEvent).clientY - rect.top) * scaleY,
+      x: (e as React.MouseEvent).clientX - rect.left,
+      y: (e as React.MouseEvent).clientY - rect.top,
     };
   };
 
-  const startDrawing = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-      e.preventDefault();
-      const canvas = signatureCanvasRef.current;
-      if (!canvas) return;
-      setIsDrawing(true);
-      setLastPos(getCanvasPos(canvas, e));
-    },
-    []
-  );
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setIsDrawing(true);
+    lastPos.current = getPos(e, canvas);
+  };
 
-  const draw = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-      e.preventDefault();
-      if (!isDrawing || !lastPos) return;
-      const canvas = signatureCanvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const pos = getCanvasPos(canvas, e);
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const pos = getPos(e, canvas);
+    if (lastPos.current) {
       ctx.beginPath();
-      ctx.moveTo(lastPos.x, lastPos.y);
+      ctx.moveTo(lastPos.current.x, lastPos.current.y);
       ctx.lineTo(pos.x, pos.y);
-      ctx.strokeStyle = "#f59e0b";
+      ctx.strokeStyle = "#f5c518";
       ctx.lineWidth = 2;
       ctx.lineCap = "round";
       ctx.stroke();
-      setLastPos(pos);
-    },
-    [isDrawing, lastPos]
-  );
-
-  const stopDrawing = useCallback(() => {
-    if (!isDrawing) return;
-    setIsDrawing(false);
-    setLastPos(null);
-    const canvas = signatureCanvasRef.current;
-    if (canvas) {
-      updateField("signatureData", canvas.toDataURL());
     }
-  }, [isDrawing]);
+    lastPos.current = pos;
+  };
+
+  const stopDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    setIsDrawing(false);
+    lastPos.current = null;
+    const canvas = canvasRef.current;
+    if (canvas) {
+      setSignature(canvas.toDataURL());
+    }
+  };
 
   const clearSignature = () => {
-    const canvas = signatureCanvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-    updateField("signatureData", "");
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignature("");
   };
 
   const handleGeneratePDF = async () => {
-    setIsGeneratingPDF(true);
+    setIsGenerating(true);
     try {
-      await generatePDF({
-        ...formState,
-        signatureData: formState.signatureData,
-      });
+      const reportData: ReportData = {
+        projectName: formData.projectName,
+        projectNumber: formData.projectNumber,
+        date: formData.date,
+        weather: formData.weather,
+        temperature: formData.temperature,
+        reportNumber: formData.reportNumber,
+        preparedBy: formData.preparedBy,
+        locationContact: formData.locationContact,
+        pointOfContact: formData.pointOfContact,
+        projectManager: formData.projectManager,
+        siteAddress: formData.siteAddress,
+        clientName: formData.clientName,
+        personnel: formData.personnel.map((p) => ({
+          name: p.name,
+          role: p.role,
+          hours: p.hours,
+        })),
+        workItems: formData.workItems.map((w) => ({
+          description: w.description,
+          status: w.status,
+          notes: w.notes,
+        })),
+        safetyNotes: formData.safetyNotes,
+        generalNotes: formData.generalNotes,
+        signature: signature || undefined,
+        sitePhotos: formData.sitePhotos.map((p) => p.dataUrl),
+      };
+      await generatePDF(reportData);
     } catch (err) {
       console.error("PDF generation failed:", err);
     } finally {
-      setIsGeneratingPDF(false);
+      setIsGenerating(false);
     }
   };
 
   const handleClearForm = () => {
-    if (window.confirm("Are you sure you want to clear all form data? This cannot be undone.")) {
+    if (window.confirm("Clear all form data? This cannot be undone.")) {
+      setFormData({ ...defaultFormData, date: new Date().toISOString().split("T")[0] });
       clearSignature();
-      setFormState(defaultFormState);
-      localStorage.removeItem("dailyFieldReport");
+      setPhotoError("");
     }
   };
 
-  const toggleSection = (section: string) => {
-    setActiveSection((prev) => (prev === section ? null : section));
-  };
-
-  const sectionClass = (section: string) =>
-    `form-section ${activeSection === section ? "active" : ""}`;
-
-  const inputClass =
-    "w-full bg-surface border border-border rounded px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:border-accent-yellow focus:ring-1 focus:ring-accent-yellow text-sm font-mono";
-
-  const labelClass = "block text-xs font-bold tracking-widest text-accent-yellow uppercase mb-1";
-
-  const sectionHeaderClass =
-    "flex items-center justify-between w-full text-left px-4 py-3 bg-surface-2 border border-border rounded cursor-pointer hover:border-accent-yellow transition-colors group";
-
-  const addBtnClass =
-    "flex items-center gap-2 px-3 py-1.5 text-xs font-bold tracking-wider uppercase border border-accent-yellow text-accent-yellow rounded hover:bg-accent-yellow hover:text-black transition-colors";
-
-  const removeBtnClass =
-    "text-xs text-muted-foreground hover:text-destructive transition-colors px-2 py-1 rounded border border-transparent hover:border-destructive";
-
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-3">
-      {/* Action Buttons */}
-      <div className="flex gap-3 justify-end mb-4">
-        <button
-          onClick={handleClearForm}
-          className="px-4 py-2 text-xs font-bold tracking-widest uppercase border border-border text-muted-foreground rounded hover:border-destructive hover:text-destructive transition-colors"
-        >
-          Clear Form
-        </button>
-        <button
-          onClick={handleGeneratePDF}
-          disabled={isGeneratingPDF}
-          className="btn-primary flex items-center gap-2 px-6 py-2 text-xs font-bold tracking-widest uppercase rounded"
-        >
-          {isGeneratingPDF ? (
-            <>
-              <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              Generate PDF
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* ── PROJECT INFORMATION ── */}
-      <div className={sectionClass("project")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("project")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
-            Project Information
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "project" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "project" && (
-          <div className="border border-t-0 border-border rounded-b p-4 space-y-4 bg-surface">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Project Name</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.projectName}
-                  onChange={(e) => updateField("projectName", e.target.value)}
-                  placeholder="Enter project name"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Project Number</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.projectNumber}
-                  onChange={(e) => updateField("projectNumber", e.target.value)}
-                  placeholder="e.g. PRJ-2024-001"
-                />
-              </div>
-            </div>
-            <div>
-              <label className={labelClass}>Project Address</label>
-              <input
-                type="text"
-                className={inputClass}
-                value={formState.projectAddress}
-                onChange={(e) => updateField("projectAddress", e.target.value)}
-                placeholder="Full site address"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Project Manager</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.projectManager}
-                  onChange={(e) => updateField("projectManager", e.target.value)}
-                  placeholder="Project manager name"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Point of Contact</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.locationContact}
-                  onChange={(e) => updateField("locationContact", e.target.value)}
-                  placeholder="Point of contact name"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className={labelClass}>Report Date</label>
-                <input
-                  type="date"
-                  className={inputClass}
-                  value={formState.reportDate}
-                  onChange={(e) => updateField("reportDate", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Report Number</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.reportNumber}
-                  onChange={(e) => updateField("reportNumber", e.target.value)}
-                  placeholder="e.g. DR-001"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Weather Conditions</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.weatherConditions}
-                  onChange={(e) => updateField("weatherConditions", e.target.value)}
-                  placeholder="e.g. Sunny, Cloudy"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Temperature (°F)</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.temperature}
-                  onChange={(e) => updateField("temperature", e.target.value)}
-                  placeholder="e.g. 72°F"
-                />
-              </div>
-            </div>
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      {/* Project Information */}
+      <section className="bg-surface border border-border rounded-lg p-6 space-y-4">
+        <h2 className="text-lg font-bold font-display text-foreground uppercase tracking-wider flex items-center gap-2">
+          <FileText className="w-5 h-5 text-accent-yellow" />
+          Project Information
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="projectName">Project Name</Label>
+            <Input
+              id="projectName"
+              value={formData.projectName}
+              onChange={(e) => updateField("projectName", e.target.value)}
+              placeholder="Enter project name"
+            />
           </div>
-        )}
-      </div>
+          <div className="space-y-1">
+            <Label htmlFor="projectNumber">Project Number</Label>
+            <Input
+              id="projectNumber"
+              value={formData.projectNumber}
+              onChange={(e) => updateField("projectNumber", e.target.value)}
+              placeholder="e.g. PRJ-2024-001"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="clientName">Client Name</Label>
+            <Input
+              id="clientName"
+              value={formData.clientName}
+              onChange={(e) => updateField("clientName", e.target.value)}
+              placeholder="Enter client name"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="siteAddress">Site Address</Label>
+            <Input
+              id="siteAddress"
+              value={formData.siteAddress}
+              onChange={(e) => updateField("siteAddress", e.target.value)}
+              placeholder="Enter site address"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => updateField("date", e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="reportNumber">Report Number</Label>
+            <Input
+              id="reportNumber"
+              value={formData.reportNumber}
+              onChange={(e) => updateField("reportNumber", e.target.value)}
+              placeholder="e.g. DR-001"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="weather">Weather</Label>
+            <Input
+              id="weather"
+              value={formData.weather}
+              onChange={(e) => updateField("weather", e.target.value)}
+              placeholder="e.g. Sunny, Cloudy"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="temperature">Temperature</Label>
+            <Input
+              id="temperature"
+              value={formData.temperature}
+              onChange={(e) => updateField("temperature", e.target.value)}
+              placeholder="e.g. 72°F"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="preparedBy">Prepared By</Label>
+            <Input
+              id="preparedBy"
+              value={formData.preparedBy}
+              onChange={(e) => updateField("preparedBy", e.target.value)}
+              placeholder="Your name"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="locationContact">Location Contact</Label>
+            <Input
+              id="locationContact"
+              value={formData.locationContact}
+              onChange={(e) => updateField("locationContact", e.target.value)}
+              placeholder="On-site location contact"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="pointOfContact">Point of Contact</Label>
+            <Input
+              id="pointOfContact"
+              value={formData.pointOfContact}
+              onChange={(e) => updateField("pointOfContact", e.target.value)}
+              placeholder="Primary point of contact name"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="projectManager">Project Manager</Label>
+            <Input
+              id="projectManager"
+              value={formData.projectManager}
+              onChange={(e) => updateField("projectManager", e.target.value)}
+              placeholder="Project manager name"
+            />
+          </div>
+        </div>
+      </section>
 
-      {/* ── TECHNICAL TEAM ── */}
-      <div className={sectionClass("personnel")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("personnel")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+      {/* Technical Team / Personnel */}
+      <section className="bg-surface border border-border rounded-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold font-display text-foreground uppercase tracking-wider">
             Technical Team
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "personnel" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "personnel" && (
-          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
-            {formState.personnel.map((person, idx) => (
-              <div key={person.id} className="p-3 border border-border rounded bg-surface-2 space-y-2">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-muted-foreground font-mono">
-                    Team Member #{idx + 1}
-                  </span>
-                  <button onClick={() => removePersonnel(person.id)} className={removeBtnClass}>
-                    Remove
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <label className={labelClass}>Name</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={person.name}
-                      onChange={(e) => updatePersonnel(person.id, "name", e.target.value)}
-                      placeholder="Full name"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Company</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={person.company}
-                      onChange={(e) => updatePersonnel(person.id, "company", e.target.value)}
-                      placeholder="Company name"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <label className={labelClass}>Role / Trade</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={person.role}
-                      onChange={(e) => updatePersonnel(person.id, "role", e.target.value)}
-                      placeholder="e.g. Electrician"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Hours Worked</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={person.hoursWorked}
-                      onChange={(e) => updatePersonnel(person.id, "hoursWorked", e.target.value)}
-                      placeholder="e.g. 8"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button onClick={addPersonnel} className={addBtnClass}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Team Member
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── WORK PERFORMED ── */}
-      <div className={sectionClass("work")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("work")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
-            Work Performed
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "work" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "work" && (
-          <div className="border border-t-0 border-border rounded-b p-4 bg-surface">
-            <label className={labelClass}>Description of Work</label>
-            <textarea
-              className={`${inputClass} min-h-[120px] resize-y`}
-              value={formState.workPerformed}
-              onChange={(e) => updateField("workPerformed", e.target.value)}
-              placeholder="Describe all work performed today..."
-            />
-          </div>
-        )}
-      </div>
-
-      {/* ── MATERIALS USED ── */}
-      <div className={sectionClass("materials")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("materials")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
-            Materials Used
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "materials" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "materials" && (
-          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
-            {formState.materialsUsed.map((material, idx) => (
-              <div key={material.id} className="p-3 border border-border rounded bg-surface-2 space-y-2">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-muted-foreground font-mono">
-                    Material #{idx + 1}
-                  </span>
-                  <button onClick={() => removeMaterial(material.id)} className={removeBtnClass}>
-                    Remove
-                  </button>
-                </div>
-                <div>
-                  <label className={labelClass}>Description</label>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    value={material.description}
-                    onChange={(e) => updateMaterial(material.id, "description", e.target.value)}
-                    placeholder="Material description"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className={labelClass}>Quantity</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={material.quantity}
-                      onChange={(e) => updateMaterial(material.id, "quantity", e.target.value)}
-                      placeholder="e.g. 10"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Unit</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={material.unit}
-                      onChange={(e) => updateMaterial(material.id, "unit", e.target.value)}
-                      placeholder="e.g. lbs, ft, ea"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button onClick={addMaterial} className={addBtnClass}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Material
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── EQUIPMENT USED ── */}
-      <div className={sectionClass("equipment")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("equipment")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
-            Equipment Used
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "equipment" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "equipment" && (
-          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
-            {formState.equipmentUsed.map((equipment, idx) => (
-              <div key={equipment.id} className="p-3 border border-border rounded bg-surface-2 space-y-2">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-muted-foreground font-mono">
-                    Equipment #{idx + 1}
-                  </span>
-                  <button onClick={() => removeEquipment(equipment.id)} className={removeBtnClass}>
-                    Remove
-                  </button>
-                </div>
-                <div>
-                  <label className={labelClass}>Description</label>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    value={equipment.description}
-                    onChange={(e) => updateEquipment(equipment.id, "description", e.target.value)}
-                    placeholder="Equipment description"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className={labelClass}>Quantity</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={equipment.quantity}
-                      onChange={(e) => updateEquipment(equipment.id, "quantity", e.target.value)}
-                      placeholder="e.g. 2"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Hours</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={equipment.hours}
-                      onChange={(e) => updateEquipment(equipment.id, "hours", e.target.value)}
-                      placeholder="e.g. 4"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button onClick={addEquipment} className={addBtnClass}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Equipment
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── SAFETY OBSERVATIONS ── */}
-      <div className={sectionClass("safety")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("safety")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
-            Safety Observations
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "safety" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "safety" && (
-          <div className="border border-t-0 border-border rounded-b p-4 space-y-4 bg-surface">
-            <div>
-              <label className={labelClass}>Observations</label>
-              <textarea
-                className={`${inputClass} min-h-[80px] resize-y`}
-                value={formState.safetyObservations}
-                onChange={(e) => updateField("safetyObservations", e.target.value)}
-                placeholder="Describe safety observations..."
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Incidents</label>
-              <textarea
-                className={`${inputClass} min-h-[80px] resize-y`}
-                value={formState.incidents}
-                onChange={(e) => updateField("incidents", e.target.value)}
-                placeholder="Describe any incidents..."
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Near Misses</label>
-              <textarea
-                className={`${inputClass} min-h-[80px] resize-y`}
-                value={formState.nearMisses}
-                onChange={(e) => updateField("nearMisses", e.target.value)}
-                placeholder="Describe any near misses..."
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── ISSUES & DELAYS ── */}
-      <div className={sectionClass("issues")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("issues")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
-            Issues &amp; Delays
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "issues" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "issues" && (
-          <div className="border border-t-0 border-border rounded-b p-4 bg-surface">
-            <label className={labelClass}>Description</label>
-            <textarea
-              className={`${inputClass} min-h-[100px] resize-y`}
-              value={formState.issuesDelays}
-              onChange={(e) => updateField("issuesDelays", e.target.value)}
-              placeholder="Describe any issues or delays encountered..."
-            />
-          </div>
-        )}
-      </div>
-
-      {/* ── VISITORS ── */}
-      <div className={sectionClass("visitors")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("visitors")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
-            Visitors
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "visitors" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "visitors" && (
-          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
-            {formState.visitors.map((visitor, idx) => (
-              <div key={visitor.id} className="p-3 border border-border rounded bg-surface-2 space-y-2">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-muted-foreground font-mono">
-                    Visitor #{idx + 1}
-                  </span>
-                  <button onClick={() => removeVisitor(visitor.id)} className={removeBtnClass}>
-                    Remove
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <label className={labelClass}>Name</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={visitor.name}
-                      onChange={(e) => updateVisitor(visitor.id, "name", e.target.value)}
-                      placeholder="Visitor name"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Company</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={visitor.company}
-                      onChange={(e) => updateVisitor(visitor.id, "company", e.target.value)}
-                      placeholder="Company name"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className={labelClass}>Purpose of Visit</label>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    value={visitor.purpose}
-                    onChange={(e) => updateVisitor(visitor.id, "purpose", e.target.value)}
-                    placeholder="Purpose of visit"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className={labelClass}>Time In</label>
-                    <input
-                      type="time"
-                      className={inputClass}
-                      value={visitor.timeIn}
-                      onChange={(e) => updateVisitor(visitor.id, "timeIn", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Time Out</label>
-                    <input
-                      type="time"
-                      className={inputClass}
-                      value={visitor.timeOut}
-                      onChange={(e) => updateVisitor(visitor.id, "timeOut", e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button onClick={addVisitor} className={addBtnClass}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Visitor
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── SITE PHOTOS ── */}
-      <div className={sectionClass("photos")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("photos")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
-            Site Photos
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "photos" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "photos" && (
-          <div className="border border-t-0 border-border rounded-b p-4 space-y-3 bg-surface">
-            <div>
-              <label className={`${labelClass} cursor-pointer`}>
-                <span className={addBtnClass} style={{ display: "inline-flex" }}>
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Photos
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handlePhotoUpload}
+          </h2>
+          <Button variant="outline" size="sm" onClick={addPersonnel} className="gap-1">
+            <Plus className="w-4 h-4" /> Add Member
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {formData.personnel.map((person) => (
+            <div key={person.id} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+              <div className="space-y-1">
+                <Label>Name</Label>
+                <Input
+                  value={person.name}
+                  onChange={(e) => updatePersonnel(person.id, "name", e.target.value)}
+                  placeholder="Full name"
                 />
-              </label>
+              </div>
+              <div className="space-y-1">
+                <Label>Role</Label>
+                <Input
+                  value={person.role}
+                  onChange={(e) => updatePersonnel(person.id, "role", e.target.value)}
+                  placeholder="e.g. Engineer"
+                />
+              </div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 space-y-1">
+                  <Label>Hours</Label>
+                  <Input
+                    value={person.hours}
+                    onChange={(e) => updatePersonnel(person.id, "hours", e.target.value)}
+                    placeholder="e.g. 8"
+                  />
+                </div>
+                {formData.personnel.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removePersonnel(person.id)}
+                    className="text-destructive hover:text-destructive mb-0.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-            {formState.sitePhotos.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {formState.sitePhotos.map((photo) => (
-                  <div key={photo.id} className="relative group">
-                    <img
-                      src={photo.preview}
-                      alt={photo.caption || "Site photo"}
-                      className="w-full h-32 object-cover rounded border border-border"
-                    />
-                    <button
-                      onClick={() => removePhoto(photo.id)}
-                      className="absolute top-1 right-1 bg-black/70 text-white rounded px-1.5 py-0.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
-                    >
-                      ✕
-                    </button>
-                    <input
-                      type="text"
-                      className={`${inputClass} mt-1 text-xs`}
-                      value={photo.caption}
-                      onChange={(e) => updatePhotoCaption(photo.id, e.target.value)}
-                      placeholder="Caption (optional)"
-                    />
-                  </div>
-                ))}
+          ))}
+        </div>
+      </section>
+
+      {/* Work Items */}
+      <section className="bg-surface border border-border rounded-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold font-display text-foreground uppercase tracking-wider">
+            Work Performed
+          </h2>
+          <Button variant="outline" size="sm" onClick={addWorkItem} className="gap-1">
+            <Plus className="w-4 h-4" /> Add Item
+          </Button>
+        </div>
+        <div className="space-y-4">
+          {formData.workItems.map((item) => (
+            <div key={item.id} className="border border-border rounded-md p-4 space-y-3">
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={item.description}
+                    onChange={(e) => updateWorkItem(item.id, "description", e.target.value)}
+                    placeholder="Describe the work performed..."
+                    rows={2}
+                  />
+                </div>
+                {formData.workItems.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeWorkItem(item.id)}
+                    className="text-destructive hover:text-destructive mt-6"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Status</Label>
+                  <select
+                    value={item.status}
+                    onChange={(e) => updateWorkItem(item.id, "status", e.target.value)}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option>In Progress</option>
+                    <option>Completed</option>
+                    <option>Pending</option>
+                    <option>On Hold</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Notes</Label>
+                  <Input
+                    value={item.notes}
+                    onChange={(e) => updateWorkItem(item.id, "notes", e.target.value)}
+                    placeholder="Additional notes..."
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Safety & General Notes */}
+      <section className="bg-surface border border-border rounded-lg p-6 space-y-4">
+        <h2 className="text-lg font-bold font-display text-foreground uppercase tracking-wider">
+          Notes
+        </h2>
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label htmlFor="safetyNotes">Safety Notes</Label>
+            <Textarea
+              id="safetyNotes"
+              value={formData.safetyNotes}
+              onChange={(e) => updateField("safetyNotes", e.target.value)}
+              placeholder="Document any safety observations, incidents, or precautions..."
+              rows={3}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="generalNotes">General Notes</Label>
+            <Textarea
+              id="generalNotes"
+              value={formData.generalNotes}
+              onChange={(e) => updateField("generalNotes", e.target.value)}
+              placeholder="Any additional notes or observations..."
+              rows={3}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Site Photos */}
+      <section className="bg-surface border border-border rounded-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold font-display text-foreground uppercase tracking-wider flex items-center gap-2">
+            <Camera className="w-5 h-5 text-accent-yellow" />
+            Site Photos
+            {formData.sitePhotos.length > 0 && (
+              <span className="text-sm font-normal text-muted-foreground normal-case tracking-normal">
+                ({formData.sitePhotos.length}/20)
+              </span>
+            )}
+          </h2>
+          <div className="flex gap-2">
+            {formData.sitePhotos.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllPhotos}
+                className="text-destructive hover:text-destructive gap-1"
+              >
+                <X className="w-4 h-4" /> Clear All
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="gap-1"
+              disabled={formData.sitePhotos.length >= 20}
+            >
+              <Upload className="w-4 h-4" /> Upload Photos
+            </Button>
+          </div>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handlePhotoFileChange}
+        />
+
+        {photoError && (
+          <p className="text-sm text-destructive">{photoError}</p>
+        )}
+
+        {formData.sitePhotos.length === 0 ? (
+          <div
+            className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-accent-yellow transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <ImageIcon className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+              Click to upload site photos, or drag and drop
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              PNG, JPG, WEBP up to 20 photos
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {formData.sitePhotos.map((photo) => (
+              <div key={photo.id} className="relative group aspect-square rounded-md overflow-hidden border border-border">
+                <img
+                  src={photo.dataUrl}
+                  alt={photo.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removePhoto(photo.id)}
+                    className="text-white hover:text-destructive hover:bg-transparent"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </Button>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
+                  <p className="text-xs text-white truncate">{photo.name}</p>
+                </div>
+              </div>
+            ))}
+            {formData.sitePhotos.length < 20 && (
+              <div
+                className="aspect-square rounded-md border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-accent-yellow transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Plus className="w-6 h-6 text-muted-foreground" />
               </div>
             )}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* ── SIGNATURE (LAST) ── */}
-      <div className={sectionClass("signature")}>
-        <button className={sectionHeaderClass} onClick={() => toggleSection("signature")}>
-          <span className="text-xs font-bold tracking-widest uppercase text-foreground group-hover:text-accent-yellow transition-colors">
+      {/* Signature */}
+      <section className="bg-surface border border-border rounded-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold font-display text-foreground uppercase tracking-wider">
             Signature
-          </span>
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${activeSection === "signature" ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {activeSection === "signature" && (
-          <div className="border border-t-0 border-border rounded-b p-4 space-y-4 bg-surface">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Signatory Name</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.signatoryName}
-                  onChange={(e) => updateField("signatoryName", e.target.value)}
-                  placeholder="Full name"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Title</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={formState.signatoryTitle}
-                  onChange={(e) => updateField("signatoryTitle", e.target.value)}
-                  placeholder="Job title"
-                />
-              </div>
-            </div>
-            <div>
-              <label className={labelClass}>Signature</label>
-              <div className="signature-container border border-border rounded overflow-hidden">
-                <canvas
-                  ref={signatureCanvasRef}
-                  width={800}
-                  height={200}
-                  className="w-full h-32 cursor-crosshair touch-none"
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                />
-              </div>
-              <button
-                onClick={clearSignature}
-                className="mt-2 text-xs text-muted-foreground hover:text-accent-yellow transition-colors underline"
-              >
-                Clear Signature
-              </button>
-            </div>
-          </div>
-        )}
+          </h2>
+          <Button variant="ghost" size="sm" onClick={clearSignature} className="text-muted-foreground gap-1">
+            <X className="w-4 h-4" /> Clear
+          </Button>
+        </div>
+        <div className="signature-container rounded-md overflow-hidden border border-border">
+          <canvas
+            ref={canvasRef}
+            width={600}
+            height={150}
+            className="w-full touch-none cursor-crosshair"
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">Draw your signature above using mouse or touch.</p>
+      </section>
+
+      {/* Actions */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-end pb-4">
+        <Button
+          variant="outline"
+          onClick={handleClearForm}
+          className="gap-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          Clear Form
+        </Button>
+        <Button
+          onClick={handleGeneratePDF}
+          disabled={isGenerating}
+          className="gap-2 btn-primary"
+        >
+          {isGenerating ? (
+            <>
+              <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+              Generating PDF...
+            </>
+          ) : (
+            <>
+              <FileText className="w-4 h-4" />
+              Generate PDF Report
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-reportform-component-and-any-related-ui-change-all-occurrences-of-the-label-heading-text-personnel-to-technical-team",
-      "featureTitle": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'PERSONNEL' to 'TECHNICAL TEAM'.",
+      "featureId": "feature-in-the-pdf-report-table-layout-add-a-site-photos-column-positioned-immediately-before-the-signature-column-the-column-should-display-the-uploaded-site-photo-thumbnails-as-embedded-base64-images-in-the-generated-pdf",
+      "featureTitle": "In the PDF report table layout, add a SITE PHOTOS column positioned immediately before the SIGNATURE column. The column should display the uploaded site photo thumbnails (as embedded base64 images) in the generated PDF.",
       "files": [
-        "frontend/src/components/ReportForm.tsx"
+        "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -21,10 +21,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-the-reportform-component-and-any-related-ui-change-all-occurrences-of-the-label-heading-text-location-contact-to-point-of-contact",
-      "featureTitle": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'LOCATION CONTACT' to 'POINT OF CONTACT'.",
+      "featureId": "feature-add-point-of-contact-and-project-manager-name-input-fields-to-the-reportform-these-fields-should-capture-text-values-persist-to-localstorage-alongside-other-form-data-and-be-included-in-the-generated-pdf-report",
+      "featureTitle": "Add POINT OF CONTACT and PROJECT MANAGER name input fields to the ReportForm. These fields should capture text values, persist to localStorage alongside other form data, and be included in the generated PDF report.",
       "files": [
-        "frontend/src/components/ReportForm.tsx"
+        "frontend/src/components/ReportForm.tsx",
+        "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -36,25 +37,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-reorder-the-form-sections-in-reportform-so-that-the-signature-section-is-rendered-last-after-all-other-sections",
-      "featureTitle": "Reorder the form sections in ReportForm so that the 'SIGNATURE' section is rendered last, after all other sections.",
-      "files": [
-        "frontend/src/components/ReportForm.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "camera@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
       ],
       "confidence": "high"
     }

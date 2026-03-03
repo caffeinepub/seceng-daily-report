@@ -1,56 +1,38 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-03T03:25:17.602Z",
+  "generatedAt": "2026-03-03T12:05:20.312Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'PERSONNEL' to 'TECHNICAL TEAM'.",
+        "summary": "In the PDF report table layout, add a SITE PHOTOS column positioned immediately before the SIGNATURE column. The column should display the uploaded site photo thumbnails (as embedded base64 images) in the generated PDF.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/ReportForm.tsx"
+          "frontend/src/utils/pdfGenerator.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/ReportForm.tsx"
+          "frontend/src/utils/pdfGenerator.ts"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'LOCATION CONTACT' to 'POINT OF CONTACT'.",
+        "summary": "Add POINT OF CONTACT and PROJECT MANAGER name input fields to the ReportForm. These fields should capture text values, persist to localStorage alongside other form data, and be included in the generated PDF report.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/utils/pdfGenerator.ts",
           "frontend/src/components/ReportForm.tsx"
         ],
         "matchedFiles": [
+          "frontend/src/utils/pdfGenerator.ts",
           "frontend/src/components/ReportForm.tsx"
         ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Reorder the form sections in ReportForm so that the 'SIGNATURE' section is rendered last, after all other sections.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/ReportForm.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/ReportForm.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Update the PDF generator (pdfGenerator.ts) to reflect all three changes: use 'TECHNICAL TEAM' instead of 'PERSONNEL', 'POINT OF CONTACT' instead of 'LOCATION CONTACT', and render the SIGNATURE section last in the generated PDF.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/utils/pdfGenerator.ts"
-        ],
-        "matchedFiles": []
       }
     ]
   },
@@ -60,6 +42,7 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/ReportForm.tsx",
+    "frontend/src/utils/pdfGenerator.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

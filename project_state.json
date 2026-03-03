@@ -1,48 +1,44 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project with text/label editing: renaming PERSONNEL to TECHNICAL TEAM, LOCATION CONTACT to POINT OF CONTACT, and reordering SIGNATURE to be the last item in a list.",
+  "summary": "Project with a data table/form that includes columns for site photos, signatures, point of contact, and project manager names.",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-the-reportform-component-and-any-related-ui-change-all-occurrences-of-the-label-heading-text-personnel-to-technical-team",
-      "title": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'PERSONNEL' to 'TECHNICAL TEAM'.",
+      "id": "feature-in-the-pdf-report-table-layout-add-a-site-photos-column-positioned-immediately-before-the-signature-column-the-column-should-display-the-uploaded-site-photo-thumbnails-as-embedded-base64-images-in-the-generated-pdf",
+      "title": "In the PDF report table layout, add a SITE PHOTOS column positioned immediately before the SIGNATURE column. The column should display the uploaded site photo thumbnails (as embedded base64 images) in the generated PDF.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-in-the-reportform-component-and-any-related-ui-change-all-occurrences-of-the-label-heading-text-location-contact-to-point-of-contact",
-      "title": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'LOCATION CONTACT' to 'POINT OF CONTACT'.",
+      "id": "feature-add-point-of-contact-and-project-manager-name-input-fields-to-the-reportform-these-fields-should-capture-text-values-persist-to-localstorage-alongside-other-form-data-and-be-included-in-the-generated-pdf-report",
+      "title": "Add POINT OF CONTACT and PROJECT MANAGER name input fields to the ReportForm. These fields should capture text values, persist to localStorage alongside other form data, and be included in the generated PDF report.",
       "reqIds": [
         "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-reorder-the-form-sections-in-reportform-so-that-the-signature-section-is-rendered-last-after-all-other-sections",
-      "title": "Reorder the form sections in ReportForm so that the 'SIGNATURE' section is rendered last, after all other sections.",
-      "reqIds": [
-        "REQ-3"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
-      "id": "AR-4",
-      "summary": "Update the PDF generator (pdfGenerator.ts) to reflect all three changes: use 'TECHNICAL TEAM' instead of 'PERSONNEL', 'POINT OF CONTACT' instead of 'LOCATION CONTACT', and render the SIGNATURE section last in the generated PDF.",
-      "reqIds": [
-        "REQ-4"
-      ],
+      "id": "AR-1",
+      "summary": "Add SITE PHOTOS column before the SIGNATURE column",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add POINT OF CONTACT and PROJECT MANAGER name fields",
+      "reqIds": [],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Field Report Form",
+  "projectName": "Field Report App",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

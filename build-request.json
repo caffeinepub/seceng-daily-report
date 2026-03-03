@@ -1,89 +1,56 @@
 {
   "kind": "build_request",
-  "title": "Rename labels and reorder SIGNATURE section",
-  "projectName": "Field Report Form",
+  "title": "Add Site Photos column, Point of Contact, and Project Manager fields",
+  "projectName": "Field Report App",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'PERSONNEL' to 'TECHNICAL TEAM'.",
+      "text": "In the PDF report table layout, add a SITE PHOTOS column positioned immediately before the SIGNATURE column. The column should display the uploaded site photo thumbnails (as embedded base64 images) in the generated PDF.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Change the text 'PERSONNEL' to 'TECHNICAL TEAM'."
+          "Add SITE PHOTOS column before the SIGNATURE column."
         ]
       },
       "acceptanceCriteria": [
-        "The word 'PERSONNEL' no longer appears as a visible label or section heading in the form UI.",
-        "The section heading now reads 'TECHNICAL TEAM'."
+        "The generated PDF includes a SITE PHOTOS column header",
+        "The SITE PHOTOS column appears to the left of the SIGNATURE column",
+        "Uploaded site photos are rendered as embedded images within the SITE PHOTOS column cells in the PDF"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "In the ReportForm component and any related UI, change all occurrences of the label/heading text 'LOCATION CONTACT' to 'POINT OF CONTACT'.",
+      "text": "Add POINT OF CONTACT and PROJECT MANAGER name input fields to the ReportForm. These fields should capture text values, persist to localStorage alongside other form data, and be included in the generated PDF report.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Change the text 'LOCATION CONTACT' with 'POINT OF CONTACT'."
+          "Add POINT OF CONTACT and PROJECT MANAGER names"
         ]
       },
       "acceptanceCriteria": [
-        "The text 'LOCATION CONTACT' no longer appears as a visible label or section heading in the form UI.",
-        "The section heading now reads 'POINT OF CONTACT'."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Reorder the form sections in ReportForm so that the 'SIGNATURE' section is rendered last, after all other sections.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Make 'SIGNATURE' the last item on the list"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The SIGNATURE section appears at the bottom of the form, after every other section.",
-        "No other section ordering is changed."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Update the PDF generator (pdfGenerator.ts) to reflect all three changes: use 'TECHNICAL TEAM' instead of 'PERSONNEL', 'POINT OF CONTACT' instead of 'LOCATION CONTACT', and render the SIGNATURE section last in the generated PDF.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Change the text 'PERSONNEL' to 'TECHNICAL TEAM'.",
-          "Change the text 'LOCATION CONTACT' with 'POINT OF CONTACT'.",
-          "Make 'SIGNATURE' the last item on the list"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Generated PDFs display 'TECHNICAL TEAM' instead of 'PERSONNEL'.",
-        "Generated PDFs display 'POINT OF CONTACT' instead of 'LOCATION CONTACT'.",
-        "The SIGNATURE section appears last in the generated PDF."
+        "ReportForm displays a labeled 'Point of Contact' text input field",
+        "ReportForm displays a labeled 'Project Manager' text input field",
+        "Both fields persist their values to localStorage",
+        "Both fields' values appear in the generated PDF report under project info or a dedicated section",
+        "Fields are cleared/reset when the form is reset"
       ]
     }
   ],
   "constraints": [
-    "Do not alter any other section labels, form fields, or UI layout beyond what is specified.",
-    "Do not modify files listed in frontend.immutablePaths."
+    "Do not modify any files under frontend/src/hooks/ or frontend/src/components/ui/",
+    "Maintain existing dark industrial visual theme and styling conventions"
   ],
   "nonGoals": [
-    "Adding new form fields or sections.",
-    "Changing backend logic or data models.",
-    "Redesigning the visual theme or styling."
+    "Backend storage of form data — the app remains fully client-side",
+    "Adding any new authentication or user management features",
+    "Changing the existing PDF layout beyond the specified column addition and new fields"
   ],
   "imageRequirements": {
     "required": [],

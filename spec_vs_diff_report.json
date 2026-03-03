@@ -1,14 +1,15 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-03-03T03:25:17.599Z",
-  "summary": "All four requirements appear to be implemented. The diff shows ReportForm.tsx was updated to rename 'PERSONNEL' to 'TECHNICAL TEAM', 'LOCATION CONTACT' to 'POINT OF CONTACT', and move the SIGNATURE section last. The pdfGenerator.ts file summary confirms the same three changes were applied there as well.",
+  "generatedAt": "2026-03-03T12:05:20.308Z",
+  "summary": "Both REQ-1 and REQ-2 appear to be implemented based on the diff evidence. The pdfGenerator.ts includes sitePhotos in ReportData and renders a two-column layout with SITE PHOTOS on the left and SIGNATURE on the right. ReportForm.tsx adds pointOfContact and projectManager fields to FormData with localStorage persistence and reset support. The file summaries confirm all acceptance criteria are addressed.",
   "missing_requirements": [],
   "hallucinated_features": [],
-  "confidence": 0.92,
+  "confidence": 0.88,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/ReportForm.tsx",
+    "frontend/src/utils/pdfGenerator.ts",
     "project_state.json"
   ]
 }
