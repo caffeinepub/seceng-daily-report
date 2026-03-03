@@ -1,51 +1,23 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove Date/Weather/Temperature from Project Information and Punch In/Out for Lead & Assistant Technicians",
+  "title": "Fix spacing issues in PDF document output",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Remove Date, Weather Condition, and Temperature fields from Project Information section",
+      "summary": "Audit and fix all spacing issues in the generated PDF document to ensure consistent vertical spacing, proper padding, and balanced layout across all sections",
       "acceptanceCriteria": [
-        "The Date field is no longer visible in the Project Information section.",
-        "The Weather Condition field is no longer visible in the Project Information section.",
-        "The Temperature field is no longer visible in the Project Information section.",
-        "Removing these fields does not break form submission, localStorage persistence, or PDF generation.",
-        "If these fields were previously persisted in localStorage, their keys are either ignored or cleaned up gracefully on load."
+        "All PDF sections have consistent and visually balanced vertical spacing between them.",
+        "No content appears cramped or overlapping within sections.",
+        "Section headers and field labels have appropriate padding/margins so they are clearly separated from content.",
+        "The generated PDF fills the letter-sized page without excessive empty space or content overflow.",
+        "Signature section is properly spaced and positioned at the bottom of the document."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Remove Date, Weather Condition, and Temperature field declarations from form state, remove their input elements from the Project Information section JSX, and ensure their removal does not affect other form fields or localStorage persistence logic for remaining fields."
-        },
-        {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Remove references to Date, Weather Condition, and Temperature fields from the PDF generation logic so these fields are no longer included in generated reports."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Remove Punch In and Punch Out fields for Lead Technician and Assistant Technician",
-      "acceptanceCriteria": [
-        "Punch In and Punch Out fields for Lead Technician are no longer visible in the form.",
-        "Punch In and Punch Out fields for Assistant Technician are no longer visible in the form.",
-        "Removing these fields does not break the overall form, other punch entries (if any), localStorage persistence, or PDF generation.",
-        "The PDF generator (pdfGenerator.ts) no longer includes Lead Technician or Assistant Technician punch times in the generated report.",
-        "Any previously stored punch data for Lead/Assistant Technician in localStorage is ignored or cleaned up gracefully on load."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/ReportForm.tsx",
-          "operation": "modify",
-          "description": "Remove Punch In and Punch Out state fields for Lead Technician and Assistant Technician from the form state, remove their corresponding date/time picker input elements from the Punch section JSX, and ensure localStorage persistence logic ignores or gracefully handles these removed fields."
-        },
-        {
-          "path": "frontend/src/utils/pdfGenerator.ts",
-          "operation": "modify",
-          "description": "Remove the Lead Technician and Assistant Technician punch time entries from the personnel punch times section of the PDF generation logic so these fields are no longer rendered in generated reports."
+          "description": "Review and adjust all vertical spacing values (yPos increments), section margins, padding around headers and labels, and line heights throughout the PDF generation logic. Ensure consistent spacing between the punch times section, project info section, personnel section, work details section, and signature section. Add appropriate whitespace after section headers, standardize field label-to-content spacing, and balance the overall page layout to prevent cramped or overly loose appearance. Maintain the existing jsPDF API usage and letter-size page dimensions while only modifying spacing/layout parameters."
         }
       ]
     }

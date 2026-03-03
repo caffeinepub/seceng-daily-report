@@ -1,12 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Remove specific fields from the Project Information and Punch sections of the Field Report Pro form.
+**Goal:** Fix spacing and layout issues in the generated PDF document output.
 
 **Planned changes:**
-- Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component
-- Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component
-- Ensure the PDF generator no longer includes Lead/Assistant Technician punch times in generated reports
-- Gracefully handle any previously persisted localStorage data for the removed fields
+- Audit and fix vertical spacing between all sections (punch times, project info, personnel, work details, signatures) in `frontend/src/utils/pdfGenerator.ts`
+- Adjust padding around section headers and field labels for clear separation
+- Ensure consistent line height throughout the document
+- Fix margins so content fills the letter-sized page without overflow or excessive empty space
+- Ensure the signature section is properly spaced and positioned at the bottom
 
-**User-visible outcome:** The form no longer displays Date, Weather Condition, or Temperature in the Project Information section, and no longer displays Punch In/Out fields for Lead and Assistant Technicians. All other form functionality, persistence, and PDF generation remain intact.
+**User-visible outcome:** The generated PDF document has clean, balanced spacing throughout — no cramped or overlapping content — and reads clearly on a letter-sized page.

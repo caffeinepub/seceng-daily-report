@@ -2,10 +2,9 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-the-date-weather-condition-and-temperature-fields-from-the-project-information-section-of-the-reportform-component-these-fields-should-no-longer-be-rendered-editable-or-included-in-form-state",
-      "featureTitle": "Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component. These fields should no longer be rendered, editable, or included in form state.",
+      "featureId": "feature-audit-and-fix-all-spacing-issues-in-the-generated-pdf-document-produced-by-frontend-src-utils-pdfgenerator-ts-this-includes-reviewing-vertical-spacing-between-sections-punch-times-project-info-personnel-work-details-signatures-padding-around-section-headers-and-field-labels-line-height-consistency-and-margins-ensure-all-sections-are-evenly-spaced-content-does-not-feel-cramped-or-overly-loose-and-the-overall-layout-reads-cleanly-on-a-letter-sized-page",
+      "featureTitle": "Audit and fix all spacing issues in the generated PDF document produced by `frontend/src/utils/pdfGenerator.ts`. This includes reviewing vertical spacing between sections (punch times, project info, personnel, work details, signatures), padding around section headers and field labels, line height consistency, and margins. Ensure all sections are evenly spaced, content does not feel cramped or overly loose, and the overall layout reads cleanly on a letter-sized page.",
       "files": [
-        "frontend/src/components/ReportForm.tsx",
         "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
@@ -18,26 +17,6 @@
       ],
       "testIds": [
         "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-remove-the-punch-in-and-punch-out-fields-for-the-lead-technician-and-assistant-technician-from-the-punch-section-of-the-reportform-component-these-fields-should-no-longer-be-rendered-editable-saved-to-state-or-included-in-localstorage-persistence",
-      "featureTitle": "Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component. These fields should no longer be rendered, editable, saved to state, or included in localStorage persistence.",
-      "files": [
-        "frontend/src/components/ReportForm.tsx",
-        "frontend/src/utils/pdfGenerator.ts"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "camera@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
       ],
       "confidence": "high"
     }

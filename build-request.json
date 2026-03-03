@@ -1,60 +1,37 @@
 {
   "kind": "build_request",
-  "title": "Remove Date/Weather/Temperature from Project Information and Punch In/Out for Lead & Assistant Technicians",
-  "projectName": "Field Report Pro",
+  "title": "Fix spacing issues in PDF document output",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component. These fields should no longer be rendered, editable, or included in form state.",
+      "text": "Audit and fix all spacing issues in the generated PDF document produced by `frontend/src/utils/pdfGenerator.ts`. This includes reviewing vertical spacing between sections (punch times, project info, personnel, work details, signatures), padding around section headers and field labels, line height consistency, and margins. Ensure all sections are evenly spaced, content does not feel cramped or overly loose, and the overall layout reads cleanly on a letter-sized page.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "Remove Date, Weather conditon and temparature from Project Informaion."
+          "Fix spacing issues on the pdf document"
         ]
       },
       "acceptanceCriteria": [
-        "The Date field is no longer visible in the Project Information section.",
-        "The Weather Condition field is no longer visible in the Project Information section.",
-        "The Temperature field is no longer visible in the Project Information section.",
-        "Removing these fields does not break form submission, localStorage persistence, or PDF generation.",
-        "If these fields were previously persisted in localStorage, their keys are either ignored or cleaned up gracefully on load."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component. These fields should no longer be rendered, editable, saved to state, or included in localStorage persistence.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Remove Punch in, Punch out for Lead Technician and ASSIS Technician"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Punch In and Punch Out fields for Lead Technician are no longer visible in the form.",
-        "Punch In and Punch Out fields for Assistant Technician are no longer visible in the form.",
-        "Removing these fields does not break the overall form, other punch entries (if any), localStorage persistence, or PDF generation.",
-        "The PDF generator (pdfGenerator.ts) no longer includes Lead Technician or Assistant Technician punch times in the generated report.",
-        "Any previously stored punch data for Lead/Assistant Technician in localStorage is ignored or cleaned up gracefully on load."
+        "All PDF sections have consistent and visually balanced vertical spacing between them.",
+        "No content appears cramped or overlapping within sections.",
+        "Section headers and field labels have appropriate padding/margins so they are clearly separated from content.",
+        "The generated PDF fills the letter-sized page without excessive empty space or content overflow.",
+        "Signature section is properly spaced and positioned at the bottom of the document."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/hooks/ or frontend/src/components/ui.",
-    "Preserve all other form fields and sections that are not explicitly listed for removal.",
-    "Maintain existing localStorage persistence logic for all remaining fields."
+    "Do not add or remove any PDF fields or sections — only adjust spacing and layout.",
+    "PDF generation must remain client-side using the existing jsPDF CDN integration."
   ],
   "nonGoals": [
-    "Adding any new fields or sections to the form.",
-    "Changing the visual theme or layout of the app beyond removing the specified fields.",
-    "Modifying backend logic (backend/main.mo remains unchanged).",
-    "Removing Punch In/Out for any personnel other than Lead Technician and Assistant Technician."
+    "Adding new fields or sections to the PDF.",
+    "Changing fonts or color scheme of the PDF.",
+    "Backend changes."
   ],
   "imageRequirements": {
     "required": [],

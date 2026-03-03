@@ -1,34 +1,25 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project involves a work/field management app with punch in/out tracking and project information forms. User is removing Date, Weather Condition, and Temperature fields from Project Information, and removing Punch In/Punch Out fields for Lead Technician and Assistant Technician.",
-  "architectural_notes": [
-    "Date, Weather Condition, and Temperature fields removed from Project Information section",
-    "Punch In and Punch Out fields removed for Lead Technician and Assistant Technician"
+  "summary": "PDF document editor/generator project focused on formatting and layout improvements.",
+  "architectural_notes": [],
+  "known_issues": [
+    "Spacing issues present in the PDF document output"
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-remove-the-date-weather-condition-and-temperature-fields-from-the-project-information-section-of-the-reportform-component-these-fields-should-no-longer-be-rendered-editable-or-included-in-form-state",
-      "title": "Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component. These fields should no longer be rendered, editable, or included in form state.",
+      "id": "feature-audit-and-fix-all-spacing-issues-in-the-generated-pdf-document-produced-by-frontend-src-utils-pdfgenerator-ts-this-includes-reviewing-vertical-spacing-between-sections-punch-times-project-info-personnel-work-details-signatures-padding-around-section-headers-and-field-labels-line-height-consistency-and-margins-ensure-all-sections-are-evenly-spaced-content-does-not-feel-cramped-or-overly-loose-and-the-overall-layout-reads-cleanly-on-a-letter-sized-page",
+      "title": "Audit and fix all spacing issues in the generated PDF document produced by `frontend/src/utils/pdfGenerator.ts`. This includes reviewing vertical spacing between sections (punch times, project info, personnel, work details, signatures), padding around section headers and field labels, line height consistency, and margins. Ensure all sections are evenly spaced, content does not feel cramped or overly loose, and the overall layout reads cleanly on a letter-sized page.",
       "reqIds": [
         "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-remove-the-punch-in-and-punch-out-fields-for-the-lead-technician-and-assistant-technician-from-the-punch-section-of-the-reportform-component-these-fields-should-no-longer-be-rendered-editable-saved-to-state-or-included-in-localstorage-persistence",
-      "title": "Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component. These fields should no longer be rendered, editable, saved to state, or included in localStorage persistence.",
-      "reqIds": [
-        "REQ-2"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [],
   "gameProjectType": "none",
-  "projectName": "Field Report Pro",
+  "projectName": "Fix spacing issues in PDF document output",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
