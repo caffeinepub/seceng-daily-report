@@ -8,6 +8,8 @@ export interface ReportData {
   projectName: string;
   projectNumber: string;
   projectAddress: string;
+  projectManager: string;
+  locationContact: string;
   // Punch times (top-level / general)
   punchInDate: string;
   punchInTime: string;
@@ -157,6 +159,7 @@ export async function generatePDF(data: ReportData): Promise<void> {
   sectionHeader('Project Information');
   twoCol('Project Name', data.projectName, 'Project Number', data.projectNumber);
   fieldRow('Project Address', data.projectAddress);
+  twoCol('Project Manager', data.projectManager, 'Location Contact', data.locationContact);
   y += SECTION_GAP;
 
   // ── PERSONNEL ────────────────────────────────────────────────────────────

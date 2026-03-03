@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { generatePDF } from '@/utils/pdfGenerator';
-import { FileText, Save, RotateCcw, Clock, User, Wrench, ClipboardList, CheckCircle, AlertTriangle, Loader2, Camera, X, ImagePlus } from 'lucide-react';
+import { FileText, Save, RotateCcw, Clock, User, Wrench, ClipboardList, CheckCircle, AlertTriangle, Loader2, X, ImagePlus } from 'lucide-react';
 
 const STORAGE_KEY = 'daily_field_report_v1';
 
@@ -22,6 +22,8 @@ interface FormState {
   projectName: string;
   projectNumber: string;
   projectAddress: string;
+  projectManager: string;
+  locationContact: string;
   // Punch times
   punchInDate: string;
   punchInTime: string;
@@ -65,6 +67,8 @@ function getInitialState(): FormState {
     projectName: '',
     projectNumber: '',
     projectAddress: '',
+    projectManager: '',
+    locationContact: '',
     punchInDate: dateStr,
     punchInTime: timeStr,
     punchOutDate: dateStr,
@@ -375,6 +379,26 @@ export default function ReportForm() {
               className={inputClass}
             />
           </div>
+          <div className={fieldGroupClass}>
+            <div className="space-y-2">
+              <Label className={labelClass}>Project Manager</Label>
+              <Input
+                value={form.projectManager}
+                onChange={e => updateField('projectManager', e.target.value)}
+                placeholder="Enter project manager name"
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={labelClass}>Location Contact</Label>
+              <Input
+                value={form.locationContact}
+                onChange={e => updateField('locationContact', e.target.value)}
+                placeholder="Enter location contact name"
+                className={inputClass}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -545,12 +569,13 @@ export default function ReportForm() {
             <select
               value={form.workStatus}
               onChange={e => updateField('workStatus', e.target.value)}
-              className={`w-full h-10 px-3 rounded-md border text-sm ${inputClass}`}
+              className={`${inputClass} w-full h-10 rounded-md border px-3 py-2 text-sm`}
             >
               <option value="in-progress">In Progress</option>
               <option value="completed">Completed</option>
               <option value="on-hold">On Hold</option>
-              <option value="delayed">Delayed</option>
+              <option value="pending-materials">Pending Materials</option>
+              <option value="pending-inspection">Pending Inspection</option>
             </select>
           </div>
           <div className="space-y-2">
@@ -577,7 +602,7 @@ export default function ReportForm() {
             <Textarea
               value={form.safetyNotes}
               onChange={e => updateField('safetyNotes', e.target.value)}
-              placeholder="Safety observations, hazards, incidents..."
+              placeholder="Any safety observations or incidents..."
               rows={3}
               className={inputClass}
             />
@@ -595,78 +620,6 @@ export default function ReportForm() {
         </div>
       </div>
 
-      {/* ── SITE PHOTOS ── */}
-      <div className={sectionClass}>
-        <h2 className={sectionTitleClass}>
-          <Camera className="w-5 h-5 text-accent-yellow" />
-          Site Photos
-        </h2>
-
-        {/* Upload button */}
-        <div className="mb-4">
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handlePhotoSelect}
-          />
-          <Button
-            variant="outline"
-            onClick={() => photoInputRef.current?.click()}
-            className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10 gap-2"
-          >
-            <ImagePlus className="w-4 h-4" />
-            Add Photos
-          </Button>
-          {sitePhotos.length > 0 && (
-            <span className="ml-3 text-sm text-muted-foreground">
-              {sitePhotos.length} photo{sitePhotos.length !== 1 ? 's' : ''} selected
-            </span>
-          )}
-        </div>
-
-        {/* Photo thumbnails grid */}
-        {sitePhotos.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {sitePhotos.map((photo, index) => (
-              <div key={index} className="relative group rounded-md overflow-hidden border border-border bg-background/50 aspect-square">
-                <img
-                  src={photo.dataUrl}
-                  alt={`Site photo ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                {/* Remove button overlay */}
-                <button
-                  onClick={() => removePhoto(index)}
-                  className="absolute top-1 right-1 bg-black/70 hover:bg-destructive text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Remove photo"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-                {/* Photo number badge */}
-                <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded font-mono">
-                  {index + 1}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {sitePhotos.length === 0 && (
-          <div
-            className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-accent-yellow/50 transition-colors"
-            onClick={() => photoInputRef.current?.click()}
-          >
-            <Camera className="w-10 h-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-            <p className="text-sm text-muted-foreground">Click to add site photos</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Supports multiple images — JPG, PNG, HEIC, etc.</p>
-          </div>
-        )}
-      </div>
-
       {/* ── SIGNATURE ── */}
       <div className={sectionClass}>
         <h2 className={sectionTitleClass}>
@@ -680,7 +633,7 @@ export default function ReportForm() {
               <Input
                 value={form.signatureName}
                 onChange={e => updateField('signatureName', e.target.value)}
-                placeholder="Signatory name"
+                placeholder="Full name"
                 className={inputClass}
               />
             </div>
@@ -689,7 +642,7 @@ export default function ReportForm() {
               <Input
                 value={form.signatureTitle}
                 onChange={e => updateField('signatureTitle', e.target.value)}
-                placeholder="Signatory title"
+                placeholder="Job title"
                 className={inputClass}
               />
             </div>
@@ -723,37 +676,95 @@ export default function ReportForm() {
         </div>
       </div>
 
-      {/* ── ACTION BUTTONS ── */}
-      <div className="flex flex-wrap gap-3 justify-between items-center pb-8">
-        <div className="flex gap-3">
+      {/* ── SITE PHOTOS ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <ImagePlus className="w-5 h-5 text-accent-yellow" />
+          Site Photos
+        </h2>
+        <div className="space-y-4">
+          {/* Hidden file input */}
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handlePhotoSelect}
+          />
           <Button
             variant="outline"
-            onClick={saveToStorage}
-            disabled={isSaving}
-            className="border-border text-foreground hover:bg-surface gap-2"
+            onClick={() => photoInputRef.current?.click()}
+            className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10"
           >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isSaving ? 'Saving…' : 'Save Draft'}
+            <ImagePlus className="w-4 h-4 mr-2" />
+            Add Photos
           </Button>
-          <Button
-            variant="ghost"
-            onClick={resetForm}
-            className="text-muted-foreground hover:text-destructive gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </Button>
+
+          {/* Photo thumbnails grid */}
+          {sitePhotos.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {sitePhotos.map((photo, index) => (
+                <div key={index} className="relative group aspect-square rounded-md overflow-hidden border border-border bg-background">
+                  <img
+                    src={photo.dataUrl}
+                    alt={`Site photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-1 right-1 bg-black/70 hover:bg-black/90 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove photo"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs text-center py-0.5">
+                    Photo {index + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* ── ACTION BUTTONS ── */}
+      <div className="flex flex-wrap gap-3 justify-end pb-8">
         {saveMessage && (
-          <span className="text-sm text-accent-yellow">{saveMessage}</span>
+          <span className="self-center text-sm text-accent-yellow">{saveMessage}</span>
         )}
+        <Button
+          variant="outline"
+          onClick={resetForm}
+          className="border-border text-muted-foreground hover:text-foreground"
+        >
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reset
+        </Button>
+        <Button
+          variant="outline"
+          onClick={saveToStorage}
+          disabled={isSaving}
+          className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10"
+        >
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          Save Draft
+        </Button>
         <Button
           onClick={handleGeneratePDF}
           disabled={isGenerating}
-          className="btn-primary gap-2"
+          className="btn-primary"
         >
-          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-          {isGenerating ? 'Generating…' : 'Generate PDF'}
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <FileText className="w-4 h-4 mr-2" />
+          )}
+          Generate PDF
         </Button>
       </div>
     </div>

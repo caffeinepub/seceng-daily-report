@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-03T03:00:53.869Z",
+  "generatedAt": "2026-03-03T03:06:01.867Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,26 +12,28 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "When the app loads, automatically pre-fill the date and time fields in the ReportForm with the current date and current time. If a saved value already exists in localStorage for those fields, the current date/time should still take precedence on every fresh page load.",
+        "summary": "Add a 'Project Manager' text input field to the ReportForm component in the Project Info section, allowing users to enter the project manager's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/utils/pdfGenerator.ts",
           "frontend/src/components/ReportForm.tsx"
         ],
         "matchedFiles": [
+          "frontend/src/utils/pdfGenerator.ts",
           "frontend/src/components/ReportForm.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add a 'Site Photos' section to the ReportForm that allows users to select and upload multiple image files. Display thumbnail previews of all selected images. The selected photos should be stored in component state and included when generating the PDF report.",
+        "summary": "Add a 'Location Contact' text input field to the ReportForm component in the Project Info section, allowing users to enter the on-site location contact's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/ReportForm.tsx",
-          "frontend/src/utils/pdfGenerator.ts"
+          "frontend/src/utils/pdfGenerator.ts",
+          "frontend/src/components/ReportForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/ReportForm.tsx",
-          "frontend/src/utils/pdfGenerator.ts"
+          "frontend/src/utils/pdfGenerator.ts",
+          "frontend/src/components/ReportForm.tsx"
         ]
       }
     ]

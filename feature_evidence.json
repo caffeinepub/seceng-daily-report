@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-when-the-app-loads-automatically-pre-fill-the-date-and-time-fields-in-the-reportform-with-the-current-date-and-current-time-if-a-saved-value-already-exists-in-localstorage-for-those-fields-the-current-date-time-should-still-take-precedence-on-every-fresh-page-load",
-      "featureTitle": "When the app loads, automatically pre-fill the date and time fields in the ReportForm with the current date and current time. If a saved value already exists in localStorage for those fields, the current date/time should still take precedence on every fresh page load.",
+      "featureId": "feature-add-a-project-manager-text-input-field-to-the-reportform-component-in-the-project-info-section-allowing-users-to-enter-the-project-manager-s-name-include-this-field-in-the-reportdata-interface-and-render-it-in-the-generated-pdf-under-the-project-info-section",
+      "featureTitle": "Add a 'Project Manager' text input field to the ReportForm component in the Project Info section, allowing users to enter the project manager's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
       "files": [
-        "frontend/src/components/ReportForm.tsx"
+        "frontend/src/components/ReportForm.tsx",
+        "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -21,8 +22,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-site-photos-section-to-the-reportform-that-allows-users-to-select-and-upload-multiple-image-files-display-thumbnail-previews-of-all-selected-images-the-selected-photos-should-be-stored-in-component-state-and-included-when-generating-the-pdf-report",
-      "featureTitle": "Add a 'Site Photos' section to the ReportForm that allows users to select and upload multiple image files. Display thumbnail previews of all selected images. The selected photos should be stored in component state and included when generating the PDF report.",
+      "featureId": "feature-add-a-location-contact-text-input-field-to-the-reportform-component-in-the-project-info-section-allowing-users-to-enter-the-on-site-location-contact-s-name-include-this-field-in-the-reportdata-interface-and-render-it-in-the-generated-pdf-under-the-project-info-section",
+      "featureTitle": "Add a 'Location Contact' text input field to the ReportForm component in the Project Info section, allowing users to enter the on-site location contact's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
       "files": [
         "frontend/src/components/ReportForm.tsx",
         "frontend/src/utils/pdfGenerator.ts"

@@ -1,57 +1,58 @@
 {
   "kind": "build_request",
-  "title": "Pre-fill current date/time on load and add Site Photos upload section",
+  "title": "Add Project Manager and Location Contact fields",
   "projectName": "Field Report App",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "When the app loads, automatically pre-fill the date and time fields in the ReportForm with the current date and current time. If a saved value already exists in localStorage for those fields, the current date/time should still take precedence on every fresh page load.",
+      "text": "Add a 'Project Manager' text input field to the ReportForm component in the Project Info section, allowing users to enter the project manager's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "Always open app with current date and time."
+          "Add Project Manager"
         ]
       },
       "acceptanceCriteria": [
-        "On every page load, the date field is pre-filled with today's date in the correct input format (YYYY-MM-DD).",
-        "On every page load, the time field is pre-filled with the current local time in HH:MM format.",
-        "The pre-filled values reflect the actual current date and time at the moment of loading, not a cached or static value."
+        "A labeled 'Project Manager' text input appears in the ReportForm within the project info section",
+        "The entered value is stored in form state",
+        "The Project Manager name appears in the generated PDF report under project info",
+        "The ReportData interface includes a projectManager field"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add a 'Site Photos' section to the ReportForm that allows users to select and upload multiple image files. Display thumbnail previews of all selected images. The selected photos should be stored in component state and included when generating the PDF report.",
+      "text": "Add a 'Location Contact' text input field to the ReportForm component in the Project Info section, allowing users to enter the on-site location contact's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "Add Site Photos, to upload multiple pictures."
+          "Add Location Contact"
         ]
       },
       "acceptanceCriteria": [
-        "A clearly labelled 'Site Photos' section appears in the ReportForm.",
-        "Users can click a button or file input to select multiple image files at once (accept='image/*', multiple).",
-        "Thumbnail previews of all selected images are displayed below the upload control.",
-        "Individual photos can be removed from the selection before generating the PDF.",
-        "Selected photos are embedded in the generated PDF report under a 'Site Photos' section.",
-        "The section matches the existing dark industrial visual theme of the form."
+        "A labeled 'Location Contact' text input appears in the ReportForm within the project info section",
+        "The entered value is stored in form state",
+        "The Location Contact name appears in the generated PDF report under project info",
+        "The ReportData interface includes a locationContact field"
       ]
     }
   ],
   "constraints": [
-    "Do not modify any file under frontend/src/hooks/ or frontend/src/components/ui/.",
-    "All state and logic must remain client-side; no backend changes required."
+    "Do not modify any files under frontend/src/hooks/",
+    "Do not modify frontend/src/main.tsx",
+    "Do not modify files under frontend/src/components/ui"
   ],
   "nonGoals": [
-    "Uploading photos to a remote server or backend canister.",
-    "Persistent storage of photos across sessions.",
-    "Camera/webcam capture — file picker only."
+    "Backend persistence of form data",
+    "Authentication or user management",
+    "Changes to the site photos upload feature",
+    "Changes to the auto-fill date/time feature"
   ],
   "imageRequirements": {
     "required": [],

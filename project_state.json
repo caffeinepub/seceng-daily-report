@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App that opens with the current date and time by default, and includes a Site Photos feature for uploading multiple pictures.",
+  "summary": "Construction/project management app with fields for Project Manager and Location Contact.",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-when-the-app-loads-automatically-pre-fill-the-date-and-time-fields-in-the-reportform-with-the-current-date-and-current-time-if-a-saved-value-already-exists-in-localstorage-for-those-fields-the-current-date-time-should-still-take-precedence-on-every-fresh-page-load",
-      "title": "When the app loads, automatically pre-fill the date and time fields in the ReportForm with the current date and current time. If a saved value already exists in localStorage for those fields, the current date/time should still take precedence on every fresh page load.",
+      "id": "feature-add-a-project-manager-text-input-field-to-the-reportform-component-in-the-project-info-section-allowing-users-to-enter-the-project-manager-s-name-include-this-field-in-the-reportdata-interface-and-render-it-in-the-generated-pdf-under-the-project-info-section",
+      "title": "Add a 'Project Manager' text input field to the ReportForm component in the Project Info section, allowing users to enter the project manager's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-site-photos-section-to-the-reportform-that-allows-users-to-select-and-upload-multiple-image-files-display-thumbnail-previews-of-all-selected-images-the-selected-photos-should-be-stored-in-component-state-and-included-when-generating-the-pdf-report",
-      "title": "Add a 'Site Photos' section to the ReportForm that allows users to select and upload multiple image files. Display thumbnail previews of all selected images. The selected photos should be stored in component state and included when generating the PDF report.",
+      "id": "feature-add-a-location-contact-text-input-field-to-the-reportform-component-in-the-project-info-section-allowing-users-to-enter-the-on-site-location-contact-s-name-include-this-field-in-the-reportdata-interface-and-render-it-in-the-generated-pdf-under-the-project-info-section",
+      "title": "Add a 'Location Contact' text input field to the ReportForm component in the Project Info section, allowing users to enter the on-site location contact's name. Include this field in the ReportData interface and render it in the generated PDF under the project info section.",
       "reqIds": [
         "REQ-2"
       ],
@@ -26,13 +26,13 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Always open app with current date and time pre-filled",
+      "summary": "Add Project Manager field",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add Site Photos section to upload multiple pictures",
+      "summary": "Add Location Contact field",
       "reqIds": [],
       "status": "pending"
     }
