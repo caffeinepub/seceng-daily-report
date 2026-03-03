@@ -1,31 +1,57 @@
 {
   "kind": "build_request",
-  "title": "Promote current build to live (Version 28)",
+  "title": "Pre-fill current date/time on load and add Site Photos upload section",
+  "projectName": "Field Report App",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Deploy the current version of the application (with the compacted punch in/out layout in ReportForm) to production.",
-      "target": "both",
+      "text": "When the app loads, automatically pre-fill the date and time fields in the ReportForm with the current date and current time. If a saved value already exists in localStorage for those fields, the current date/time should still take precedence on every fresh page load.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6"
         ],
         "quotes": [
-          "Go live with this update"
+          "Always open app with current date and time."
         ]
       },
       "acceptanceCriteria": [
-        "The live environment reflects the compacted punch in/out date and time side-by-side layout in ReportForm.",
-        "The PDF generator renders punch in/out date and time on single lines as expected.",
-        "All previously working features remain functional in the live deployment."
+        "On every page load, the date field is pre-filled with today's date in the correct input format (YYYY-MM-DD).",
+        "On every page load, the time field is pre-filled with the current local time in HH:MM format.",
+        "The pre-filled values reflect the actual current date and time at the moment of loading, not a cached or static value."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add a 'Site Photos' section to the ReportForm that allows users to select and upload multiple image files. Display thumbnail previews of all selected images. The selected photos should be stored in component state and included when generating the PDF report.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "Add Site Photos, to upload multiple pictures."
+        ]
+      },
+      "acceptanceCriteria": [
+        "A clearly labelled 'Site Photos' section appears in the ReportForm.",
+        "Users can click a button or file input to select multiple image files at once (accept='image/*', multiple).",
+        "Thumbnail previews of all selected images are displayed below the upload control.",
+        "Individual photos can be removed from the selection before generating the PDF.",
+        "Selected photos are embedded in the generated PDF report under a 'Site Photos' section.",
+        "The section matches the existing dark industrial visual theme of the form."
       ]
     }
   ],
-  "constraints": [],
+  "constraints": [
+    "Do not modify any file under frontend/src/hooks/ or frontend/src/components/ui/.",
+    "All state and logic must remain client-side; no backend changes required."
+  ],
   "nonGoals": [
-    "No new features or UI changes in this deployment.",
-    "No backend schema changes."
+    "Uploading photos to a remote server or backend canister.",
+    "Persistent storage of photos across sessions.",
+    "Camera/webcam capture — file picker only."
   ],
   "imageRequirements": {
     "required": [],

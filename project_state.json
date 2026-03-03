@@ -1,22 +1,44 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "App that opens with the current date and time by default, and includes a Site Photos feature for uploading multiple pictures.",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
-  "existing_features": [],
-  "new_feature_requests": [
+  "existing_features": [
     {
-      "id": "AR-1",
-      "summary": "Deploy the current version of the application (with the compacted punch in/out layout in ReportForm) to production.",
+      "id": "feature-when-the-app-loads-automatically-pre-fill-the-date-and-time-fields-in-the-reportform-with-the-current-date-and-current-time-if-a-saved-value-already-exists-in-localstorage-for-those-fields-the-current-date-time-should-still-take-precedence-on-every-fresh-page-load",
+      "title": "When the app loads, automatically pre-fill the date and time fields in the ReportForm with the current date and current time. If a saved value already exists in localStorage for those fields, the current date/time should still take precedence on every fresh page load.",
       "reqIds": [
         "REQ-1"
       ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-site-photos-section-to-the-reportform-that-allows-users-to-select-and-upload-multiple-image-files-display-thumbnail-previews-of-all-selected-images-the-selected-photos-should-be-stored-in-component-state-and-included-when-generating-the-pdf-report",
+      "title": "Add a 'Site Photos' section to the ReportForm that allows users to select and upload multiple image files. Display thumbnail previews of all selected images. The selected photos should be stored in component state and included when generating the PDF report.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Always open app with current date and time pre-filled",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add Site Photos section to upload multiple pictures",
+      "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Promote current build to live (Version 28)",
+  "gameProjectType": "none",
+  "projectName": "Field Report App",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

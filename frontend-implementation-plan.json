@@ -1,31 +1,45 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Promote current build to live (Version 28)",
+  "title": "Pre-fill current date/time on load and add Site Photos upload section",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Deploy the current version of the application with the compacted punch in/out layout in ReportForm to production",
+      "summary": "Pre-fill date and time fields with current date/time on every page load",
       "acceptanceCriteria": [
-        "The live environment reflects the compacted punch in/out date and time side-by-side layout in ReportForm.",
-        "The PDF generator renders punch in/out date and time on single lines as expected.",
-        "All previously working features remain functional in the live deployment."
+        "On every page load, the date field is pre-filled with today's date in the correct input format (YYYY-MM-DD).",
+        "On every page load, the time field is pre-filled with the current local time in HH:MM format.",
+        "The pre-filled values reflect the actual current date and time at the moment of loading, not a cached or static value."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/ReportForm.tsx",
           "operation": "modify",
-          "description": "Verify the compacted punch in/out layout is present and correctly implemented, showing date and time inputs side-by-side on a single row for both the lead tech and additional technicians. Ensure all form functionality including localStorage persistence and signature canvas remain intact."
+          "description": "Modify the component to set the date and time fields to current values on every mount. Add a useEffect hook that runs on mount to capture the current date (formatted as YYYY-MM-DD) and current time (formatted as HH:MM), then update the formData state with these values. This ensures fresh current values take precedence over any localStorage data on every page load."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add Site Photos section with multi-image upload, thumbnail previews, and PDF embedding",
+      "acceptanceCriteria": [
+        "A clearly labelled 'Site Photos' section appears in the ReportForm.",
+        "Users can click a button or file input to select multiple image files at once (accept='image/*', multiple).",
+        "Thumbnail previews of all selected images are displayed below the upload control.",
+        "Individual photos can be removed from the selection before generating the PDF.",
+        "Selected photos are embedded in the generated PDF report under a 'Site Photos' section.",
+        "The section matches the existing dark industrial visual theme of the form."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Add a 'Site Photos' section to the form with a file input (accept='image/*', multiple). Add a sitePhotos state array to store selected File objects. When files are selected, convert them to data URLs for thumbnail preview display. Render thumbnail images in a grid layout with individual remove buttons. Style the section using existing dark industrial theme classes (bg-gradient-to-br from-slate-800 to-slate-900, border-slate-700, etc.). Pass the sitePhotos array to the generatePDF function when the Generate PDF button is clicked."
         },
         {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Verify the PDF generator correctly renders punch in/out date and time on single lines as expected, matching the compacted layout from ReportForm. Ensure all PDF sections (project info, personnel, work details, status, notes, signature) render correctly."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Verify the root component renders correctly with the sticky industrial-themed header, hero banner with feature icons, ReportForm, and footer. Ensure all previously working features remain functional."
+          "description": "Extend the ReportData interface to include an optional sitePhotos field (array of File objects). In the generatePDF function, after rendering all existing sections, add a 'Site Photos' section if sitePhotos array is present and non-empty. For each photo, use FileReader to convert the File to a data URL, then add the image to the PDF using doc.addImage with appropriate positioning and sizing. Use jsPDF's addPage() to create new pages if needed to fit all photos. Maintain consistent spacing and section header styling matching the existing PDF layout."
         }
       ]
     }

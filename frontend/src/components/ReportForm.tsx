@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { generatePDF } from '@/utils/pdfGenerator';
-import { FileText, Save, RotateCcw, Clock, User, Wrench, ClipboardList, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { FileText, Save, RotateCcw, Clock, User, Wrench, ClipboardList, CheckCircle, AlertTriangle, Loader2, Camera, X, ImagePlus } from 'lucide-react';
 
 const STORAGE_KEY = 'daily_field_report_v1';
 
@@ -47,10 +47,20 @@ interface FormState {
   signatureData: string;
 }
 
-function getInitialState(): FormState {
+interface PhotoEntry {
+  file: File;
+  dataUrl: string;
+}
+
+function getCurrentDateTime() {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
   const timeStr = now.toTimeString().slice(0, 5);
+  return { dateStr, timeStr };
+}
+
+function getInitialState(): FormState {
+  const { dateStr, timeStr } = getCurrentDateTime();
   return {
     projectName: '',
     projectNumber: '',
@@ -80,16 +90,18 @@ export default function ReportForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [sitePhotos, setSitePhotos] = useState<PhotoEntry[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount, but always override date/time with current values
   useEffect(() => {
+    const { dateStr, timeStr } = getCurrentDateTime();
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Only pick keys that exist in current FormState to gracefully ignore removed fields
         const initial = getInitialState();
         const merged: FormState = { ...initial };
         (Object.keys(initial) as (keyof FormState)[]).forEach(key => {
@@ -98,10 +110,18 @@ export default function ReportForm() {
             (merged as any)[key] = parsed[key];
           }
         });
+        // Always override date/time fields with current values on every load
+        merged.punchInDate = dateStr;
+        merged.punchInTime = timeStr;
+        merged.punchOutDate = dateStr;
+        merged.punchOutTime = timeStr;
         setForm(merged);
+      } else {
+        // No saved data — initial state already has current date/time
+        setForm(getInitialState());
       }
     } catch {
-      // ignore
+      setForm(getInitialState());
     }
   }, []);
 
@@ -116,6 +136,7 @@ export default function ReportForm() {
         img.src = form.signatureData;
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateField = (field: keyof FormState, value: string | TechEntry[]) => {
@@ -141,6 +162,7 @@ export default function ReportForm() {
       const fresh = getInitialState();
       setForm(fresh);
       localStorage.removeItem(STORAGE_KEY);
+      setSitePhotos([]);
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -196,9 +218,7 @@ export default function ReportForm() {
   };
 
   const addAdditionalTech = () => {
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toTimeString().slice(0, 5);
+    const { dateStr, timeStr } = getCurrentDateTime();
     const newTech: TechEntry = {
       name: '',
       punchInDate: dateStr,
@@ -220,6 +240,34 @@ export default function ReportForm() {
     updateField('additionalTechs', form.additionalTechs.filter((_, i) => i !== index));
   };
 
+  // Site Photos handlers
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newEntries: PhotoEntry[] = [];
+    let loaded = 0;
+
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        newEntries.push({ file, dataUrl: ev.target?.result as string });
+        loaded++;
+        if (loaded === files.length) {
+          setSitePhotos(prev => [...prev, ...newEntries]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input so same files can be re-selected if needed
+    e.target.value = '';
+  };
+
+  const removePhoto = (index: number) => {
+    setSitePhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
     try {
@@ -227,6 +275,7 @@ export default function ReportForm() {
       await generatePDF({
         ...form,
         signatureData,
+        sitePhotos: sitePhotos.map(p => p.dataUrl),
       });
     } catch (err) {
       console.error('PDF generation failed:', err);
@@ -546,6 +595,78 @@ export default function ReportForm() {
         </div>
       </div>
 
+      {/* ── SITE PHOTOS ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <Camera className="w-5 h-5 text-accent-yellow" />
+          Site Photos
+        </h2>
+
+        {/* Upload button */}
+        <div className="mb-4">
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handlePhotoSelect}
+          />
+          <Button
+            variant="outline"
+            onClick={() => photoInputRef.current?.click()}
+            className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10 gap-2"
+          >
+            <ImagePlus className="w-4 h-4" />
+            Add Photos
+          </Button>
+          {sitePhotos.length > 0 && (
+            <span className="ml-3 text-sm text-muted-foreground">
+              {sitePhotos.length} photo{sitePhotos.length !== 1 ? 's' : ''} selected
+            </span>
+          )}
+        </div>
+
+        {/* Photo thumbnails grid */}
+        {sitePhotos.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {sitePhotos.map((photo, index) => (
+              <div key={index} className="relative group rounded-md overflow-hidden border border-border bg-background/50 aspect-square">
+                <img
+                  src={photo.dataUrl}
+                  alt={`Site photo ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                {/* Remove button overlay */}
+                <button
+                  onClick={() => removePhoto(index)}
+                  className="absolute top-1 right-1 bg-black/70 hover:bg-destructive text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Remove photo"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                {/* Photo number badge */}
+                <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded font-mono">
+                  {index + 1}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {sitePhotos.length === 0 && (
+          <div
+            className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-accent-yellow/50 transition-colors"
+            onClick={() => photoInputRef.current?.click()}
+          >
+            <Camera className="w-10 h-10 text-muted-foreground mx-auto mb-2 opacity-50" />
+            <p className="text-sm text-muted-foreground">Click to add site photos</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Supports multiple images — JPG, PNG, HEIC, etc.</p>
+          </div>
+        )}
+      </div>
+
       {/* ── SIGNATURE ── */}
       <div className={sectionClass}>
         <h2 className={sectionTitleClass}>
@@ -559,7 +680,7 @@ export default function ReportForm() {
               <Input
                 value={form.signatureName}
                 onChange={e => updateField('signatureName', e.target.value)}
-                placeholder="Full name"
+                placeholder="Signatory name"
                 className={inputClass}
               />
             </div>
@@ -568,19 +689,19 @@ export default function ReportForm() {
               <Input
                 value={form.signatureTitle}
                 onChange={e => updateField('signatureTitle', e.target.value)}
-                placeholder="Job title"
+                placeholder="Signatory title"
                 className={inputClass}
               />
             </div>
           </div>
           <div className="space-y-2">
             <Label className={labelClass}>Signature</Label>
-            <div className="signature-container">
+            <div className="signature-container border border-border rounded-md overflow-hidden">
               <canvas
                 ref={canvasRef}
                 width={600}
                 height={150}
-                className="w-full rounded border border-border cursor-crosshair touch-none"
+                className="w-full touch-none cursor-crosshair"
                 onMouseDown={startDraw}
                 onMouseMove={draw}
                 onMouseUp={endDraw}
@@ -602,35 +723,37 @@ export default function ReportForm() {
         </div>
       </div>
 
-      {/* ── ACTIONS ── */}
-      <div className="flex flex-wrap gap-3 justify-end items-center pb-8">
+      {/* ── ACTION BUTTONS ── */}
+      <div className="flex flex-wrap gap-3 justify-between items-center pb-8">
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={saveToStorage}
+            disabled={isSaving}
+            className="border-border text-foreground hover:bg-surface gap-2"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {isSaving ? 'Saving…' : 'Save Draft'}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={resetForm}
+            className="text-muted-foreground hover:text-destructive gap-2"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset
+          </Button>
+        </div>
         {saveMessage && (
           <span className="text-sm text-accent-yellow">{saveMessage}</span>
         )}
         <Button
-          variant="outline"
-          onClick={resetForm}
-          className="border-border text-muted-foreground hover:text-foreground"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Reset
-        </Button>
-        <Button
-          variant="outline"
-          onClick={saveToStorage}
-          disabled={isSaving}
-          className="border-border text-muted-foreground hover:text-foreground"
-        >
-          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Save Draft
-        </Button>
-        <Button
           onClick={handleGeneratePDF}
           disabled={isGenerating}
-          className="btn-primary"
+          className="btn-primary gap-2"
         >
-          {isGenerating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
-          Generate PDF
+          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+          {isGenerating ? 'Generating…' : 'Generate PDF'}
         </Button>
       </div>
     </div>

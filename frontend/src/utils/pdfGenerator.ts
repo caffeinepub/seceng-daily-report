@@ -37,6 +37,8 @@ export interface ReportData {
   signatureName: string;
   signatureTitle: string;
   signatureData: string;
+  // Site Photos (data URLs)
+  sitePhotos?: string[];
 }
 
 export async function generatePDF(data: ReportData): Promise<void> {
@@ -52,13 +54,16 @@ export async function generatePDF(data: ReportData): Promise<void> {
   let y = margin;
 
   // ── spacing constants ─────────────────────────────────────────────────────
-  const SECTION_GAP = 18;       // space between end of one section and next header
-  const HEADER_H = 26;          // height of the dark section header bar
-  const HEADER_BOTTOM_PAD = 14; // space below header bar before first field
-  const FIELD_LABEL_H = 13;     // space after label text before value
-  const FIELD_LINE_H = 15;      // line height for value text
-  const FIELD_BOTTOM_PAD = 10;  // space after value before next field
-  const SUB_HEADER_BOTTOM = 16; // space after amber sub-header text before field
+  const SECTION_GAP = 18;         // space between end of one section and next header
+  const HEADER_H = 26;            // height of the dark section header bar
+  const HEADER_BOTTOM_PAD = 16;   // space below header bar before first field label baseline
+  const LABEL_FONT_SIZE = 8;      // pt — grey uppercase label
+  const VALUE_FONT_SIZE = 10.5;   // pt — field value text
+  const LABEL_TO_VALUE_GAP = 14;  // pt — from label baseline to first value line baseline
+  const VALUE_LINE_H = 16;        // pt — line height between value lines (for multi-line values)
+  const FIELD_BOTTOM_PAD = 12;    // pt — space after last value line before next label
+  const SUB_HEADER_FONT_SIZE = 9; // pt — amber sub-section header
+  const SUB_HEADER_BOTTOM = 18;   // pt — from sub-header baseline to first label baseline
 
   // ── helpers ──────────────────────────────────────────────────────────────
   const checkPage = (needed: number) => {
@@ -69,7 +74,7 @@ export async function generatePDF(data: ReportData): Promise<void> {
   };
 
   const sectionHeader = (title: string) => {
-    checkPage(HEADER_H + HEADER_BOTTOM_PAD + 20);
+    checkPage(HEADER_H + HEADER_BOTTOM_PAD + 30);
     doc.setFillColor(30, 30, 30);
     doc.rect(margin, y, contentW, HEADER_H, 'F');
     doc.setFont('helvetica', 'bold');
@@ -79,22 +84,36 @@ export async function generatePDF(data: ReportData): Promise<void> {
     y += HEADER_H + HEADER_BOTTOM_PAD;
   };
 
+  /**
+   * Render a labelled field.
+   * jsPDF text() with an array renders lines at the given y using the current
+   * font's internal line-height. We render each line manually so we fully
+   * control the vertical rhythm and avoid overlap / excessive gaps.
+   */
   const fieldRow = (label: string, value: string, x = margin, w = contentW) => {
-    const lines = doc.splitTextToSize(value || '—', w);
-    const needed = FIELD_LABEL_H + lines.length * FIELD_LINE_H + FIELD_BOTTOM_PAD;
-    checkPage(needed);
+    const lines: string[] = doc.splitTextToSize(value || '—', w);
+    const totalValueH = lines.length * VALUE_LINE_H;
+    const needed = LABEL_TO_VALUE_GAP + totalValueH + FIELD_BOTTOM_PAD;
+    checkPage(needed + 10);
 
+    // Label
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
+    doc.setFontSize(LABEL_FONT_SIZE);
     doc.setTextColor(110, 110, 110);
     doc.text(label.toUpperCase(), x, y);
-    y += FIELD_LABEL_H;
+    y += LABEL_TO_VALUE_GAP;
 
+    // Value lines — rendered one-by-one for precise spacing
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10.5);
+    doc.setFontSize(VALUE_FONT_SIZE);
     doc.setTextColor(25, 25, 25);
-    doc.text(lines, x, y);
-    y += lines.length * FIELD_LINE_H + FIELD_BOTTOM_PAD;
+    for (const line of lines) {
+      checkPage(VALUE_LINE_H + FIELD_BOTTOM_PAD);
+      doc.text(line, x, y);
+      y += VALUE_LINE_H;
+    }
+
+    y += FIELD_BOTTOM_PAD;
   };
 
   const twoCol = (
@@ -144,31 +163,31 @@ export async function generatePDF(data: ReportData): Promise<void> {
   sectionHeader('Personnel');
 
   // Lead Tech
-  checkPage(SUB_HEADER_BOTTOM + 40);
+  checkPage(SUB_HEADER_BOTTOM + 50);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+  doc.setFontSize(SUB_HEADER_FONT_SIZE);
   doc.setTextColor(245, 158, 11);
   doc.text('LEAD TECHNICIAN', margin, y);
   y += SUB_HEADER_BOTTOM;
   fieldRow('Name', data.leadTechName);
-  y += 8;
+  y += 6;
 
   // Assist Tech
-  checkPage(SUB_HEADER_BOTTOM + 40);
+  checkPage(SUB_HEADER_BOTTOM + 50);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+  doc.setFontSize(SUB_HEADER_FONT_SIZE);
   doc.setTextColor(245, 158, 11);
   doc.text('ASSISTANT TECHNICIAN', margin, y);
   y += SUB_HEADER_BOTTOM;
   fieldRow('Name', data.assistTechName);
-  y += 8;
+  y += 6;
 
   // Additional Techs
   if (data.additionalTechs && data.additionalTechs.length > 0) {
     data.additionalTechs.forEach((tech, i) => {
-      checkPage(SUB_HEADER_BOTTOM + 80);
+      checkPage(SUB_HEADER_BOTTOM + 90);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
+      doc.setFontSize(SUB_HEADER_FONT_SIZE);
       doc.setTextColor(245, 158, 11);
       doc.text(`TECHNICIAN ${i + 1}`, margin, y);
       y += SUB_HEADER_BOTTOM;
@@ -176,7 +195,7 @@ export async function generatePDF(data: ReportData): Promise<void> {
       const techIn = `${tech.punchInDate || '—'} ${tech.punchInTime || ''}`.trim();
       const techOut = `${tech.punchOutDate || '—'} ${tech.punchOutTime || ''}`.trim();
       twoCol('Punch In', techIn, 'Punch Out', techOut);
-      y += 8;
+      y += 6;
     });
   }
   y += SECTION_GAP;
@@ -209,6 +228,60 @@ export async function generatePDF(data: ReportData): Promise<void> {
     doc.rect(margin, y, 220, 70);
     doc.addImage(data.signatureData, 'PNG', margin + 4, y + 4, 212, 62);
     y += 82;
+  }
+  y += SECTION_GAP;
+
+  // ── SITE PHOTOS ──────────────────────────────────────────────────────────
+  if (data.sitePhotos && data.sitePhotos.length > 0) {
+    sectionHeader('Site Photos');
+
+    // Layout: 2 photos per row
+    const PHOTOS_PER_ROW = 2;
+    const PHOTO_GAP = 12;
+    const photoW = (contentW - PHOTO_GAP * (PHOTOS_PER_ROW - 1)) / PHOTOS_PER_ROW;
+    const photoH = photoW * 0.75; // 4:3 aspect ratio
+    const CAPTION_H = 16;
+    const ROW_BOTTOM_PAD = 14;
+
+    for (let i = 0; i < data.sitePhotos.length; i += PHOTOS_PER_ROW) {
+      const rowPhotos = data.sitePhotos.slice(i, i + PHOTOS_PER_ROW);
+      const rowNeeded = photoH + CAPTION_H + ROW_BOTTOM_PAD;
+      checkPage(rowNeeded + 10);
+
+      rowPhotos.forEach((photoDataUrl, colIdx) => {
+        const x = margin + colIdx * (photoW + PHOTO_GAP);
+
+        // Determine image format from data URL
+        let imgFormat = 'JPEG';
+        if (photoDataUrl.startsWith('data:image/png')) imgFormat = 'PNG';
+        else if (photoDataUrl.startsWith('data:image/webp')) imgFormat = 'WEBP';
+
+        try {
+          doc.addImage(photoDataUrl, imgFormat, x, y, photoW, photoH);
+        } catch {
+          // If format detection fails, try JPEG as fallback
+          try {
+            doc.addImage(photoDataUrl, 'JPEG', x, y, photoW, photoH);
+          } catch {
+            // Draw placeholder box if image fails
+            doc.setFillColor(50, 50, 50);
+            doc.rect(x, y, photoW, photoH, 'F');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Image unavailable', x + photoW / 2, y + photoH / 2, { align: 'center' });
+          }
+        }
+
+        // Caption: "Photo N"
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(110, 110, 110);
+        doc.text(`Photo ${i + colIdx + 1}`, x, y + photoH + 11);
+      });
+
+      y += photoH + CAPTION_H + ROW_BOTTOM_PAD;
+    }
   }
 
   // ── FOOTER ───────────────────────────────────────────────────────────────

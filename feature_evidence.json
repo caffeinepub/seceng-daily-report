@@ -1,4 +1,44 @@
 {
   "kind": "feature_evidence_report",
-  "features": []
+  "features": [
+    {
+      "featureId": "feature-when-the-app-loads-automatically-pre-fill-the-date-and-time-fields-in-the-reportform-with-the-current-date-and-current-time-if-a-saved-value-already-exists-in-localstorage-for-those-fields-the-current-date-time-should-still-take-precedence-on-every-fresh-page-load",
+      "featureTitle": "When the app loads, automatically pre-fill the date and time fields in the ReportForm with the current date and current time. If a saved value already exists in localStorage for those fields, the current date/time should still take precedence on every fresh page load.",
+      "files": [
+        "frontend/src/components/ReportForm.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "camera@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-site-photos-section-to-the-reportform-that-allows-users-to-select-and-upload-multiple-image-files-display-thumbnail-previews-of-all-selected-images-the-selected-photos-should-be-stored-in-component-state-and-included-when-generating-the-pdf-report",
+      "featureTitle": "Add a 'Site Photos' section to the ReportForm that allows users to select and upload multiple image files. Display thumbnail previews of all selected images. The selected photos should be stored in component state and included when generating the PDF report.",
+      "files": [
+        "frontend/src/components/ReportForm.tsx",
+        "frontend/src/utils/pdfGenerator.ts"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "camera@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    }
+  ]
 }
