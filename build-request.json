@@ -1,37 +1,31 @@
 {
   "kind": "build_request",
-  "title": "Fix spacing issues in PDF document output",
+  "title": "Promote current build to live (Version 28)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Audit and fix all spacing issues in the generated PDF document produced by `frontend/src/utils/pdfGenerator.ts`. This includes reviewing vertical spacing between sections (punch times, project info, personnel, work details, signatures), padding around section headers and field labels, line height consistency, and margins. Ensure all sections are evenly spaced, content does not feel cramped or overly loose, and the overall layout reads cleanly on a letter-sized page.",
-      "target": "frontend",
+      "text": "Deploy the current version of the application (with the compacted punch in/out layout in ReportForm) to production.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "Fix spacing issues on the pdf document"
+          "Go live with this update"
         ]
       },
       "acceptanceCriteria": [
-        "All PDF sections have consistent and visually balanced vertical spacing between them.",
-        "No content appears cramped or overlapping within sections.",
-        "Section headers and field labels have appropriate padding/margins so they are clearly separated from content.",
-        "The generated PDF fills the letter-sized page without excessive empty space or content overflow.",
-        "Signature section is properly spaced and positioned at the bottom of the document."
+        "The live environment reflects the compacted punch in/out date and time side-by-side layout in ReportForm.",
+        "The PDF generator renders punch in/out date and time on single lines as expected.",
+        "All previously working features remain functional in the live deployment."
       ]
     }
   ],
-  "constraints": [
-    "Do not add or remove any PDF fields or sections — only adjust spacing and layout.",
-    "PDF generation must remain client-side using the existing jsPDF CDN integration."
-  ],
+  "constraints": [],
   "nonGoals": [
-    "Adding new fields or sections to the PDF.",
-    "Changing fonts or color scheme of the PDF.",
-    "Backend changes."
+    "No new features or UI changes in this deployment.",
+    "No backend schema changes."
   ],
   "imageRequirements": {
     "required": [],

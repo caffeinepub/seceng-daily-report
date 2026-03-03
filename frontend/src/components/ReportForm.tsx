@@ -250,42 +250,42 @@ export default function ReportForm() {
           <Clock className="w-5 h-5 text-accent-yellow" />
           Punch
         </h2>
-        <div className={fieldGroupClass}>
-          <div className="space-y-2">
-            <Label className={labelClass}>Punch In Date</Label>
-            <Input
-              type="date"
-              value={form.punchInDate}
-              onChange={e => updateField('punchInDate', e.target.value)}
-              className={inputClass}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Punch In row */}
+          <div className="space-y-1">
+            <Label className={labelClass}>Punch In</Label>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={form.punchInDate}
+                onChange={e => updateField('punchInDate', e.target.value)}
+                className={`${inputClass} flex-1 min-w-0`}
+              />
+              <Input
+                type="time"
+                value={form.punchInTime}
+                onChange={e => updateField('punchInTime', e.target.value)}
+                className={`${inputClass} w-32 shrink-0`}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label className={labelClass}>Punch In Time</Label>
-            <Input
-              type="time"
-              value={form.punchInTime}
-              onChange={e => updateField('punchInTime', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className={labelClass}>Punch Out Date</Label>
-            <Input
-              type="date"
-              value={form.punchOutDate}
-              onChange={e => updateField('punchOutDate', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className={labelClass}>Punch Out Time</Label>
-            <Input
-              type="time"
-              value={form.punchOutTime}
-              onChange={e => updateField('punchOutTime', e.target.value)}
-              className={inputClass}
-            />
+          {/* Punch Out row */}
+          <div className="space-y-1">
+            <Label className={labelClass}>Punch Out</Label>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={form.punchOutDate}
+                onChange={e => updateField('punchOutDate', e.target.value)}
+                className={`${inputClass} flex-1 min-w-0`}
+              />
+              <Input
+                type="time"
+                value={form.punchOutTime}
+                onChange={e => updateField('punchOutTime', e.target.value)}
+                className={`${inputClass} w-32 shrink-0`}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -380,7 +380,7 @@ export default function ReportForm() {
                   Remove
                 </Button>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="space-y-2">
                   <Label className={labelClass}>Name</Label>
                   <Input
@@ -390,42 +390,42 @@ export default function ReportForm() {
                     className={inputClass}
                   />
                 </div>
-                <div className={fieldGroupClass}>
-                  <div className="space-y-2">
-                    <Label className={labelClass}>Punch In Date</Label>
-                    <Input
-                      type="date"
-                      value={tech.punchInDate}
-                      onChange={e => updateAdditionalTech(index, 'punchInDate', e.target.value)}
-                      className={inputClass}
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Tech Punch In */}
+                  <div className="space-y-1">
+                    <Label className={labelClass}>Punch In</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="date"
+                        value={tech.punchInDate}
+                        onChange={e => updateAdditionalTech(index, 'punchInDate', e.target.value)}
+                        className={`${inputClass} flex-1 min-w-0`}
+                      />
+                      <Input
+                        type="time"
+                        value={tech.punchInTime}
+                        onChange={e => updateAdditionalTech(index, 'punchInTime', e.target.value)}
+                        className={`${inputClass} w-32 shrink-0`}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className={labelClass}>Punch In Time</Label>
-                    <Input
-                      type="time"
-                      value={tech.punchInTime}
-                      onChange={e => updateAdditionalTech(index, 'punchInTime', e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className={labelClass}>Punch Out Date</Label>
-                    <Input
-                      type="date"
-                      value={tech.punchOutDate}
-                      onChange={e => updateAdditionalTech(index, 'punchOutDate', e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className={labelClass}>Punch Out Time</Label>
-                    <Input
-                      type="time"
-                      value={tech.punchOutTime}
-                      onChange={e => updateAdditionalTech(index, 'punchOutTime', e.target.value)}
-                      className={inputClass}
-                    />
+                  {/* Tech Punch Out */}
+                  <div className="space-y-1">
+                    <Label className={labelClass}>Punch Out</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="date"
+                        value={tech.punchOutDate}
+                        onChange={e => updateAdditionalTech(index, 'punchOutDate', e.target.value)}
+                        className={`${inputClass} flex-1 min-w-0`}
+                      />
+                      <Input
+                        type="time"
+                        value={tech.punchOutTime}
+                        onChange={e => updateAdditionalTech(index, 'punchOutTime', e.target.value)}
+                        className={`${inputClass} w-32 shrink-0`}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -528,7 +528,7 @@ export default function ReportForm() {
             <Textarea
               value={form.safetyNotes}
               onChange={e => updateField('safetyNotes', e.target.value)}
-              placeholder="Safety observations, incidents, or concerns..."
+              placeholder="Safety observations, hazards, incidents..."
               rows={3}
               className={inputClass}
             />
@@ -575,12 +575,12 @@ export default function ReportForm() {
           </div>
           <div className="space-y-2">
             <Label className={labelClass}>Signature</Label>
-            <div className="signature-container border border-border rounded-md overflow-hidden">
+            <div className="signature-container">
               <canvas
                 ref={canvasRef}
                 width={600}
                 height={150}
-                className="w-full cursor-crosshair touch-none"
+                className="w-full rounded border border-border cursor-crosshair touch-none"
                 onMouseDown={startDraw}
                 onMouseMove={draw}
                 onMouseUp={endDraw}
@@ -603,9 +603,9 @@ export default function ReportForm() {
       </div>
 
       {/* ── ACTIONS ── */}
-      <div className="flex flex-wrap gap-3 justify-end">
+      <div className="flex flex-wrap gap-3 justify-end items-center pb-8">
         {saveMessage && (
-          <span className="self-center text-sm text-accent-yellow">{saveMessage}</span>
+          <span className="text-sm text-accent-yellow">{saveMessage}</span>
         )}
         <Button
           variant="outline"
@@ -619,10 +619,10 @@ export default function ReportForm() {
           variant="outline"
           onClick={saveToStorage}
           disabled={isSaving}
-          className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10"
+          className="border-border text-muted-foreground hover:text-foreground"
         >
           {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Save
+          Save Draft
         </Button>
         <Button
           onClick={handleGeneratePDF}

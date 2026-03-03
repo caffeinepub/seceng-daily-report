@@ -1,13 +1,9 @@
 # Specification
 
 ## Summary
-**Goal:** Fix spacing and layout issues in the generated PDF document output.
+**Goal:** Deploy the current application build (Version 28) to production.
 
 **Planned changes:**
-- Audit and fix vertical spacing between all sections (punch times, project info, personnel, work details, signatures) in `frontend/src/utils/pdfGenerator.ts`
-- Adjust padding around section headers and field labels for clear separation
-- Ensure consistent line height throughout the document
-- Fix margins so content fills the letter-sized page without overflow or excessive empty space
-- Ensure the signature section is properly spaced and positioned at the bottom
+- Promote the current build with the compacted punch in/out layout in ReportForm to the live environment.
 
-**User-visible outcome:** The generated PDF document has clean, balanced spacing throughout — no cramped or overlapping content — and reads clearly on a letter-sized page.
+**User-visible outcome:** The live environment reflects the compacted punch in/out date and time side-by-side layout, and the PDF generator renders punch in/out on single lines as expected.

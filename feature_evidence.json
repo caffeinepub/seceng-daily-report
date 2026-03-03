@@ -1,24 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-audit-and-fix-all-spacing-issues-in-the-generated-pdf-document-produced-by-frontend-src-utils-pdfgenerator-ts-this-includes-reviewing-vertical-spacing-between-sections-punch-times-project-info-personnel-work-details-signatures-padding-around-section-headers-and-field-labels-line-height-consistency-and-margins-ensure-all-sections-are-evenly-spaced-content-does-not-feel-cramped-or-overly-loose-and-the-overall-layout-reads-cleanly-on-a-letter-sized-page",
-      "featureTitle": "Audit and fix all spacing issues in the generated PDF document produced by `frontend/src/utils/pdfGenerator.ts`. This includes reviewing vertical spacing between sections (punch times, project info, personnel, work details, signatures), padding around section headers and field labels, line height consistency, and margins. Ensure all sections are evenly spaced, content does not feel cramped or overly loose, and the overall layout reads cleanly on a letter-sized page.",
-      "files": [
-        "frontend/src/utils/pdfGenerator.ts"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "camera@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

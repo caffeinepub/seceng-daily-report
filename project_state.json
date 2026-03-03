@@ -1,25 +1,22 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "PDF document editor/generator project focused on formatting and layout improvements.",
+  "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [
-    "Spacing issues present in the PDF document output"
-  ],
-  "isFixRequest": true,
-  "existing_features": [
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [],
+  "new_feature_requests": [
     {
-      "id": "feature-audit-and-fix-all-spacing-issues-in-the-generated-pdf-document-produced-by-frontend-src-utils-pdfgenerator-ts-this-includes-reviewing-vertical-spacing-between-sections-punch-times-project-info-personnel-work-details-signatures-padding-around-section-headers-and-field-labels-line-height-consistency-and-margins-ensure-all-sections-are-evenly-spaced-content-does-not-feel-cramped-or-overly-loose-and-the-overall-layout-reads-cleanly-on-a-letter-sized-page",
-      "title": "Audit and fix all spacing issues in the generated PDF document produced by `frontend/src/utils/pdfGenerator.ts`. This includes reviewing vertical spacing between sections (punch times, project info, personnel, work details, signatures), padding around section headers and field labels, line height consistency, and margins. Ensure all sections are evenly spaced, content does not feel cramped or overly loose, and the overall layout reads cleanly on a letter-sized page.",
+      "id": "AR-1",
+      "summary": "Deploy the current version of the application (with the compacted punch in/out layout in ReportForm) to production.",
       "reqIds": [
         "REQ-1"
       ],
-      "version": 1
+      "status": "pending"
     }
   ],
-  "new_feature_requests": [],
-  "gameProjectType": "none",
-  "projectName": "Fix spacing issues in PDF document output",
+  "projectName": "Promote current build to live (Version 28)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
