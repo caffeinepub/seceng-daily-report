@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark industrial palette */
+    --background: oklch(0.12 0.004 260);
+    --foreground: oklch(0.92 0.008 80);
+
+    --surface: oklch(0.16 0.005 260);
+    --surface-2: oklch(0.2 0.006 260);
+
+    /* Safety yellow accent */
+    --accent-yellow: oklch(0.85 0.18 90);
+    --accent-yellow-foreground: oklch(0.12 0.01 90);
+
+    /* High-vis orange accent */
+    --accent-orange: oklch(0.72 0.19 50);
+    --accent-orange-foreground: oklch(0.12 0.01 50);
+
+    /* Primary = dark gray button */
+    --primary: oklch(0.28 0.006 260);
+    --primary-foreground: oklch(0.92 0.008 80);
+
+    --secondary: oklch(0.22 0.006 260);
+    --secondary-foreground: oklch(0.8 0.008 80);
+
+    --muted: oklch(0.2 0.005 260);
+    --muted-foreground: oklch(0.52 0.008 260);
+
+    --accent: oklch(0.22 0.006 260);
+    --accent-foreground: oklch(0.92 0.008 80);
+
+    --destructive: oklch(0.52 0.22 25);
+    --destructive-foreground: oklch(0.98 0.005 25);
+
+    --border: oklch(0.26 0.007 260);
+    --input: oklch(0.18 0.005 260);
+    --ring: oklch(0.85 0.18 90);
+
+    --radius: 0.375rem;
+
+    color-scheme: dark;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, sans-serif;
+  }
+
+  input[type="datetime-local"],
+  input[type="date"],
+  input[type="time"] {
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  /* Dark gray buttons — NOT amber/yellow */
+  .btn-primary {
+    background-color: oklch(0.3 0.006 260);
+    color: oklch(0.92 0.008 80);
+    @apply font-bold rounded px-4 py-2 hover:opacity-90 active:scale-95 transition-all border border-border;
+  }
+
+  .btn-secondary {
+    background-color: oklch(0.22 0.006 260);
+    color: oklch(0.8 0.008 80);
+    @apply font-bold rounded px-4 py-2 hover:opacity-90 active:scale-95 transition-all border border-border;
+  }
+
+  .btn-danger {
+    @apply bg-destructive text-destructive-foreground font-bold rounded px-4 py-2 hover:opacity-90 active:scale-95 transition-all;
+  }
+
+  .btn-yellow {
+    background-color: oklch(0.85 0.18 90);
+    color: oklch(0.12 0.01 90);
+    @apply font-bold rounded px-4 py-2 hover:opacity-90 active:scale-95 transition-all;
+  }
+
+  .signature-container {
+    @apply w-full rounded-lg overflow-hidden border border-border;
+    height: 150px;
+    background: oklch(0.1 0.004 260);
+  }
+}
