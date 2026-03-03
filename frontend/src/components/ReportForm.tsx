@@ -1,584 +1,636 @@
-import { useState, useRef } from 'react';
+// Daily Field Report Form Component
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { generatePDF, TechnicianData, AssisTech } from '@/utils/pdfGenerator';
-import {
-  FileText,
-  Plus,
-  Trash2,
-  UserPlus,
-  PenLine,
-  RotateCcw,
-} from 'lucide-react';
+import { generatePDF } from '@/utils/pdfGenerator';
+import { FileText, Save, RotateCcw, Clock, User, Wrench, ClipboardList, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 
-interface FormData {
-  date: string;
-  jobName: string;
-  jobNumber: string;
-  location: string;
-  weatherConditions: string;
-  temperature: string;
+const STORAGE_KEY = 'daily_field_report_v1';
+
+interface TechEntry {
+  name: string;
+  punchInDate: string;
+  punchInTime: string;
+  punchOutDate: string;
+  punchOutTime: string;
+}
+
+interface FormState {
+  // Project Info
+  projectName: string;
+  projectNumber: string;
+  projectAddress: string;
+  // Punch times
+  punchInDate: string;
+  punchInTime: string;
+  punchOutDate: string;
+  punchOutTime: string;
+  // Personnel
+  leadTechName: string;
+  assistTechName: string;
+  additionalTechs: TechEntry[];
+  // Work Details
   workPerformed: string;
   materialsUsed: string;
   equipmentUsed: string;
+  // Status
   workStatus: string;
   percentComplete: string;
+  // Notes
+  safetyNotes: string;
   additionalNotes: string;
+  // Signature
+  signatureName: string;
+  signatureTitle: string;
+  signatureData: string;
 }
 
-const defaultFormData: FormData = {
-  date: new Date().toISOString().split('T')[0],
-  jobName: '',
-  jobNumber: '',
-  location: '',
-  weatherConditions: '',
-  temperature: '',
-  workPerformed: '',
-  materialsUsed: '',
-  equipmentUsed: '',
-  workStatus: 'In Progress',
-  percentComplete: '',
-  additionalNotes: '',
-};
-
-const defaultTechnician = (): TechnicianData => ({
-  name: '',
-  workPunchIn: '',
-  workPunchOut: '',
-  lunchPunchIn: '',
-  lunchPunchOut: '',
-});
-
-const defaultAssisTech = (): AssisTech => ({
-  name: '',
-  workPunchIn: '',
-  workPunchOut: '',
-  lunchPunchIn: '',
-  lunchPunchOut: '',
-});
+function getInitialState(): FormState {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().slice(0, 5);
+  return {
+    projectName: '',
+    projectNumber: '',
+    projectAddress: '',
+    punchInDate: dateStr,
+    punchInTime: timeStr,
+    punchOutDate: dateStr,
+    punchOutTime: timeStr,
+    leadTechName: '',
+    assistTechName: '',
+    additionalTechs: [],
+    workPerformed: '',
+    materialsUsed: '',
+    equipmentUsed: '',
+    workStatus: 'in-progress',
+    percentComplete: '',
+    safetyNotes: '',
+    additionalNotes: '',
+    signatureName: '',
+    signatureTitle: '',
+    signatureData: '',
+  };
+}
 
 export default function ReportForm() {
-  const [formData, setFormData] = useState<FormData>(defaultFormData);
-  const [technicians, setTechnicians] = useState<TechnicianData[]>([defaultTechnician()]);
-  const [assisTechs, setAssisTechs] = useState<AssisTech[]>([]);
-  const [signature, setSignature] = useState<string>('');
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [form, setForm] = useState<FormState>(getInitialState);
+  const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-
+  const [saveMessage, setSaveMessage] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lastPos = useRef<{ x: number; y: number } | null>(null);
+  const isDrawing = useRef(false);
 
-  // ── Form field handlers ────────────────────────────────────────────────────
-  function handleChange(field: keyof FormData, value: string) {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only pick keys that exist in current FormState to gracefully ignore removed fields
+        const initial = getInitialState();
+        const merged: FormState = { ...initial };
+        (Object.keys(initial) as (keyof FormState)[]).forEach(key => {
+          if (key in parsed) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (merged as any)[key] = parsed[key];
+          }
+        });
+        setForm(merged);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  // ── Technician handlers ────────────────────────────────────────────────────
-  function updateTechnician(index: number, field: keyof TechnicianData, value: string) {
-    setTechnicians(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
-  }
+  // Restore signature canvas on mount
+  useEffect(() => {
+    if (form.signatureData && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.src = form.signatureData;
+      }
+    }
+  }, []);
 
-  function addTechnician() {
-    setTechnicians(prev => [...prev, defaultTechnician()]);
-  }
+  const updateField = (field: keyof FormState, value: string | TechEntry[]) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
 
-  function removeTechnician(index: number) {
-    setTechnicians(prev => prev.filter((_, i) => i !== index));
-  }
+  const saveToStorage = () => {
+    setIsSaving(true);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+      setSaveMessage('Saved successfully!');
+    } catch {
+      setSaveMessage('Save failed.');
+    }
+    setTimeout(() => {
+      setIsSaving(false);
+      setSaveMessage('');
+    }, 2000);
+  };
 
-  // ── ASSIS Tech handlers ────────────────────────────────────────────────────
-  function updateAssisTech(index: number, field: keyof AssisTech, value: string) {
-    setAssisTechs(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
-  }
+  const resetForm = () => {
+    if (confirm('Reset all fields? This cannot be undone.')) {
+      const fresh = getInitialState();
+      setForm(fresh);
+      localStorage.removeItem(STORAGE_KEY);
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    }
+  };
 
-  function addAssisTech() {
-    setAssisTechs(prev => [...prev, defaultAssisTech()]);
-  }
-
-  function removeAssisTech(index: number) {
-    setAssisTechs(prev => prev.filter((_, i) => i !== index));
-  }
-
-  // ── Signature canvas ───────────────────────────────────────────────────────
-  function getPos(e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) {
+  // Signature drawing
+  const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
     if ('touches' in e) {
-      return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top,
-      };
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
     }
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  }
+    return { x: (e as React.MouseEvent).clientX - rect.left, y: (e as React.MouseEvent).clientY - rect.top };
+  };
 
-  function startDrawing(e: React.MouseEvent | React.TouchEvent) {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
-    setIsDrawing(true);
-    lastPos.current = getPos(e, canvas);
-  }
-
-  function draw(e: React.MouseEvent | React.TouchEvent) {
-    if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    e.preventDefault();
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    isDrawing.current = true;
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext('2d')!;
     const pos = getPos(e, canvas);
     ctx.beginPath();
-    ctx.moveTo(lastPos.current!.x, lastPos.current!.y);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = '#f5c518';
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (!isDrawing.current) return;
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext('2d')!;
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
+    ctx.strokeStyle = '#f59e0b';
+    const pos = getPos(e, canvas);
+    ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
-    lastPos.current = pos;
-  }
+  };
 
-  function stopDrawing() {
-    if (!isDrawing) return;
-    setIsDrawing(false);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      setSignature(canvas.toDataURL('image/png'));
+  const endDraw = () => {
+    isDrawing.current = false;
+    if (canvasRef.current) {
+      updateField('signatureData', canvasRef.current.toDataURL());
     }
-  }
+  };
 
-  function clearSignature() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setSignature('');
-  }
+  const clearSignature = () => {
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      updateField('signatureData', '');
+    }
+  };
 
-  // ── PDF generation ─────────────────────────────────────────────────────────
-  async function handleGeneratePDF() {
+  const addAdditionalTech = () => {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().slice(0, 5);
+    const newTech: TechEntry = {
+      name: '',
+      punchInDate: dateStr,
+      punchInTime: timeStr,
+      punchOutDate: dateStr,
+      punchOutTime: timeStr,
+    };
+    updateField('additionalTechs', [...form.additionalTechs, newTech]);
+  };
+
+  const updateAdditionalTech = (index: number, field: keyof TechEntry, value: string) => {
+    const updated = form.additionalTechs.map((t, i) =>
+      i === index ? { ...t, [field]: value } : t
+    );
+    updateField('additionalTechs', updated);
+  };
+
+  const removeAdditionalTech = (index: number) => {
+    updateField('additionalTechs', form.additionalTechs.filter((_, i) => i !== index));
+  };
+
+  const handleGeneratePDF = async () => {
     setIsGenerating(true);
     try {
-      generatePDF({
-        ...formData,
-        technicians,
-        assisTechs,
-        signature: signature || undefined,
+      const signatureData = canvasRef.current ? canvasRef.current.toDataURL() : '';
+      await generatePDF({
+        ...form,
+        signatureData,
       });
     } catch (err) {
       console.error('PDF generation failed:', err);
     } finally {
       setIsGenerating(false);
     }
-  }
+  };
 
-  // ── Shared input class ─────────────────────────────────────────────────────
-  const inputClass =
-    'bg-surface border-border text-foreground placeholder:text-muted-foreground focus:border-accent-yellow focus:ring-1 focus:ring-accent-yellow';
+  const sectionClass = "bg-surface border border-border rounded-lg p-6 mb-6 shadow-sm";
+  const sectionTitleClass = "text-lg font-oswald font-semibold text-foreground uppercase tracking-wider mb-4 flex items-center gap-2";
+  const fieldGroupClass = "grid grid-cols-1 md:grid-cols-2 gap-4";
+  const labelClass = "text-sm font-medium text-muted-foreground uppercase tracking-wide";
+  const inputClass = "bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-accent-yellow focus:ring-accent-yellow/20";
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
 
-      {/* ── PROJECT INFORMATION ─────────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
-        <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
-          <FileText className="w-5 h-5" />
-          Project Information
+      {/* ── PUNCH SECTION ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <Clock className="w-5 h-5 text-accent-yellow" />
+          Punch
         </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Date</Label>
+        <div className={fieldGroupClass}>
+          <div className="space-y-2">
+            <Label className={labelClass}>Punch In Date</Label>
             <Input
               type="date"
-              value={formData.date}
-              onChange={e => handleChange('date', e.target.value)}
+              value={form.punchInDate}
+              onChange={e => updateField('punchInDate', e.target.value)}
               className={inputClass}
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Job Name</Label>
+          <div className="space-y-2">
+            <Label className={labelClass}>Punch In Time</Label>
             <Input
-              placeholder="Enter job name"
-              value={formData.jobName}
-              onChange={e => handleChange('jobName', e.target.value)}
+              type="time"
+              value={form.punchInTime}
+              onChange={e => updateField('punchInTime', e.target.value)}
               className={inputClass}
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Job Number</Label>
+          <div className="space-y-2">
+            <Label className={labelClass}>Punch Out Date</Label>
             <Input
-              placeholder="e.g. JOB-2024-001"
-              value={formData.jobNumber}
-              onChange={e => handleChange('jobNumber', e.target.value)}
+              type="date"
+              value={form.punchOutDate}
+              onChange={e => updateField('punchOutDate', e.target.value)}
               className={inputClass}
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Location</Label>
+          <div className="space-y-2">
+            <Label className={labelClass}>Punch Out Time</Label>
             <Input
-              placeholder="Site address or name"
-              value={formData.location}
-              onChange={e => handleChange('location', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Weather Conditions</Label>
-            <Input
-              placeholder="e.g. Sunny, Cloudy, Rain"
-              value={formData.weatherConditions}
-              onChange={e => handleChange('weatherConditions', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Temperature (°F)</Label>
-            <Input
-              type="number"
-              placeholder="e.g. 72"
-              value={formData.temperature}
-              onChange={e => handleChange('temperature', e.target.value)}
+              type="time"
+              value={form.punchOutTime}
+              onChange={e => updateField('punchOutTime', e.target.value)}
               className={inputClass}
             />
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── LEAD TECHNICIANS ────────────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
-            <UserPlus className="w-5 h-5" />
-            Lead Technicians
-          </h2>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addTechnician}
-            className="border-accent-yellow text-accent-yellow hover:bg-accent-yellow hover:text-background gap-1"
-          >
-            <Plus className="w-4 h-4" />
-            Add Tech
-          </Button>
+      {/* ── PROJECT INFORMATION ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <ClipboardList className="w-5 h-5 text-accent-yellow" />
+          Project Information
+        </h2>
+        <div className="space-y-4">
+          <div className={fieldGroupClass}>
+            <div className="space-y-2">
+              <Label className={labelClass}>Project Name</Label>
+              <Input
+                value={form.projectName}
+                onChange={e => updateField('projectName', e.target.value)}
+                placeholder="Enter project name"
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={labelClass}>Project Number</Label>
+              <Input
+                value={form.projectNumber}
+                onChange={e => updateField('projectNumber', e.target.value)}
+                placeholder="Enter project number"
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className={labelClass}>Project Address</Label>
+            <Input
+              value={form.projectAddress}
+              onChange={e => updateField('projectAddress', e.target.value)}
+              placeholder="Enter project address"
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── PERSONNEL ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <User className="w-5 h-5 text-accent-yellow" />
+          Personnel
+        </h2>
+
+        {/* Lead Technician */}
+        <div className="mb-6">
+          <h3 className="text-sm font-oswald font-semibold text-accent-yellow uppercase tracking-wider mb-3">Lead Technician</h3>
+          <div className="space-y-2">
+            <Label className={labelClass}>Name</Label>
+            <Input
+              value={form.leadTechName}
+              onChange={e => updateField('leadTechName', e.target.value)}
+              placeholder="Lead technician name"
+              className={inputClass}
+            />
+          </div>
         </div>
 
-        {technicians.map((tech, idx) => (
-          <div key={idx} className="rounded-md border border-border bg-background p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-accent-yellow uppercase tracking-wider">
-                Technician {idx + 1}
-              </span>
-              {technicians.length > 1 && (
+        {/* Assistant Technician */}
+        <div className="mb-6">
+          <h3 className="text-sm font-oswald font-semibold text-accent-yellow uppercase tracking-wider mb-3">Assistant Technician</h3>
+          <div className="space-y-2">
+            <Label className={labelClass}>Name</Label>
+            <Input
+              value={form.assistTechName}
+              onChange={e => updateField('assistTechName', e.target.value)}
+              placeholder="Assistant technician name"
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {/* Additional Technicians */}
+        <div>
+          <h3 className="text-sm font-oswald font-semibold text-accent-yellow uppercase tracking-wider mb-3">Additional Technicians</h3>
+          {form.additionalTechs.map((tech, index) => (
+            <div key={index} className="border border-border rounded-md p-4 mb-4 bg-background/50">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-medium text-muted-foreground">Technician {index + 1}</span>
                 <Button
-                  type="button"
                   variant="ghost"
-                  size="icon"
-                  onClick={() => removeTechnician(idx)}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7"
+                  size="sm"
+                  onClick={() => removeAdditionalTech(index)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 px-2"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  Remove
                 </Button>
-              )}
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className={labelClass}>Name</Label>
+                  <Input
+                    value={tech.name}
+                    onChange={e => updateAdditionalTech(index, 'name', e.target.value)}
+                    placeholder="Technician name"
+                    className={inputClass}
+                  />
+                </div>
+                <div className={fieldGroupClass}>
+                  <div className="space-y-2">
+                    <Label className={labelClass}>Punch In Date</Label>
+                    <Input
+                      type="date"
+                      value={tech.punchInDate}
+                      onChange={e => updateAdditionalTech(index, 'punchInDate', e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClass}>Punch In Time</Label>
+                    <Input
+                      type="time"
+                      value={tech.punchInTime}
+                      onChange={e => updateAdditionalTech(index, 'punchInTime', e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClass}>Punch Out Date</Label>
+                    <Input
+                      type="date"
+                      value={tech.punchOutDate}
+                      onChange={e => updateAdditionalTech(index, 'punchOutDate', e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClass}>Punch Out Time</Label>
+                    <Input
+                      type="time"
+                      value={tech.punchOutTime}
+                      onChange={e => updateAdditionalTech(index, 'punchOutTime', e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs uppercase tracking-wider">Name</Label>
-              <Input
-                placeholder="Technician name"
-                value={tech.name}
-                onChange={e => updateTechnician(idx, 'name', e.target.value)}
-                className={inputClass}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Punch In</Label>
-                <Input
-                  type="datetime-local"
-                  value={tech.workPunchIn}
-                  onChange={e => updateTechnician(idx, 'workPunchIn', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Punch Out</Label>
-                <Input
-                  type="datetime-local"
-                  value={tech.workPunchOut}
-                  onChange={e => updateTechnician(idx, 'workPunchOut', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Lunch Punch In</Label>
-                <Input
-                  type="datetime-local"
-                  value={tech.lunchPunchIn}
-                  onChange={e => updateTechnician(idx, 'lunchPunchIn', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Lunch Punch Out</Label>
-                <Input
-                  type="datetime-local"
-                  value={tech.lunchPunchOut}
-                  onChange={e => updateTechnician(idx, 'lunchPunchOut', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* ── ASSISTANT TECHNICIANS ───────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
-            <UserPlus className="w-5 h-5" />
-            ASSIS Techs
-          </h2>
+          ))}
           <Button
-            type="button"
             variant="outline"
             size="sm"
-            onClick={addAssisTech}
-            className="border-accent-yellow text-accent-yellow hover:bg-accent-yellow hover:text-background gap-1"
+            onClick={addAdditionalTech}
+            className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10"
           >
-            <Plus className="w-4 h-4" />
-            Add ASSIS Tech
+            + Add Technician
           </Button>
         </div>
+      </div>
 
-        {assisTechs.length === 0 && (
-          <p className="text-muted-foreground text-sm italic">
-            No assistant technicians added. Click "Add ASSIS Tech" to add one.
-          </p>
-        )}
-
-        {assisTechs.map((tech, idx) => (
-          <div key={idx} className="rounded-md border border-border bg-background p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-accent-yellow uppercase tracking-wider">
-                ASSIS Tech {idx + 1}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeAssisTech(idx)}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs uppercase tracking-wider">Name</Label>
-              <Input
-                placeholder="Assistant technician name"
-                value={tech.name}
-                onChange={e => updateAssisTech(idx, 'name', e.target.value)}
-                className={inputClass}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Punch In</Label>
-                <Input
-                  type="datetime-local"
-                  value={tech.workPunchIn}
-                  onChange={e => updateAssisTech(idx, 'workPunchIn', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Punch Out</Label>
-                <Input
-                  type="datetime-local"
-                  value={tech.workPunchOut}
-                  onChange={e => updateAssisTech(idx, 'workPunchOut', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Lunch Punch In</Label>
-                <Input
-                  type="datetime-local"
-                  value={tech.lunchPunchIn}
-                  onChange={e => updateAssisTech(idx, 'lunchPunchIn', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Lunch Punch Out</Label>
-                <Input
-                  type="datetime-local"
-                  value={tech.lunchPunchOut}
-                  onChange={e => updateAssisTech(idx, 'lunchPunchOut', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* ── WORK DETAILS ────────────────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
-        <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
-          <FileText className="w-5 h-5" />
+      {/* ── WORK DETAILS ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <Wrench className="w-5 h-5 text-accent-yellow" />
           Work Details
         </h2>
-
-        <div className="space-y-1">
-          <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Performed</Label>
-          <Textarea
-            placeholder="Describe the work performed today..."
-            value={formData.workPerformed}
-            onChange={e => handleChange('workPerformed', e.target.value)}
-            className={`${inputClass} min-h-[100px]`}
-          />
-        </div>
-
-        <div className="space-y-1">
-          <Label className="text-muted-foreground text-xs uppercase tracking-wider">Materials Used</Label>
-          <Textarea
-            placeholder="List materials used..."
-            value={formData.materialsUsed}
-            onChange={e => handleChange('materialsUsed', e.target.value)}
-            className={`${inputClass} min-h-[80px]`}
-          />
-        </div>
-
-        <div className="space-y-1">
-          <Label className="text-muted-foreground text-xs uppercase tracking-wider">Equipment Used</Label>
-          <Textarea
-            placeholder="List equipment used..."
-            value={formData.equipmentUsed}
-            onChange={e => handleChange('equipmentUsed', e.target.value)}
-            className={`${inputClass} min-h-[80px]`}
-          />
-        </div>
-      </section>
-
-      {/* ── PROJECT STATUS ──────────────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
-        <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest">
-          Project Status
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Work Status</Label>
-            <Select value={formData.workStatus} onValueChange={v => handleChange('workStatus', v)}>
-              <SelectTrigger className={inputClass}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-surface border-border text-foreground">
-                <SelectItem value="Not Started">Not Started</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="On Hold">On Hold</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className={labelClass}>Work Performed</Label>
+            <Textarea
+              value={form.workPerformed}
+              onChange={e => updateField('workPerformed', e.target.value)}
+              placeholder="Describe work performed..."
+              rows={4}
+              className={inputClass}
+            />
           </div>
+          <div className={fieldGroupClass}>
+            <div className="space-y-2">
+              <Label className={labelClass}>Materials Used</Label>
+              <Textarea
+                value={form.materialsUsed}
+                onChange={e => updateField('materialsUsed', e.target.value)}
+                placeholder="List materials used..."
+                rows={3}
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={labelClass}>Equipment Used</Label>
+              <Textarea
+                value={form.equipmentUsed}
+                onChange={e => updateField('equipmentUsed', e.target.value)}
+                placeholder="List equipment used..."
+                rows={3}
+                className={inputClass}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Percent Complete (%)</Label>
+      {/* ── STATUS ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <CheckCircle className="w-5 h-5 text-accent-yellow" />
+          Status
+        </h2>
+        <div className={fieldGroupClass}>
+          <div className="space-y-2">
+            <Label className={labelClass}>Work Status</Label>
+            <select
+              value={form.workStatus}
+              onChange={e => updateField('workStatus', e.target.value)}
+              className={`w-full h-10 px-3 rounded-md border text-sm ${inputClass}`}
+            >
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="on-hold">On Hold</option>
+              <option value="delayed">Delayed</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label className={labelClass}>Percent Complete</Label>
             <Input
-              type="number"
-              min="0"
-              max="100"
-              placeholder="e.g. 75"
-              value={formData.percentComplete}
-              onChange={e => handleChange('percentComplete', e.target.value)}
+              value={form.percentComplete}
+              onChange={e => updateField('percentComplete', e.target.value)}
+              placeholder="e.g. 75%"
               className={inputClass}
             />
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── ADDITIONAL NOTES ────────────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
-        <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest">
-          Additional Notes
+      {/* ── NOTES ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <AlertTriangle className="w-5 h-5 text-accent-yellow" />
+          Notes
         </h2>
-        <div className="space-y-1">
-          <Label className="text-muted-foreground text-xs uppercase tracking-wider">Notes</Label>
-          <Textarea
-            placeholder="Any additional notes, observations, or issues..."
-            value={formData.additionalNotes}
-            onChange={e => handleChange('additionalNotes', e.target.value)}
-            className={`${inputClass} min-h-[100px]`}
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className={labelClass}>Safety Notes</Label>
+            <Textarea
+              value={form.safetyNotes}
+              onChange={e => updateField('safetyNotes', e.target.value)}
+              placeholder="Safety observations, incidents, or concerns..."
+              rows={3}
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={labelClass}>Additional Notes</Label>
+            <Textarea
+              value={form.additionalNotes}
+              onChange={e => updateField('additionalNotes', e.target.value)}
+              placeholder="Any additional notes or comments..."
+              rows={3}
+              className={inputClass}
+            />
+          </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── SIGNATURE ───────────────────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-accent-yellow uppercase tracking-widest flex items-center gap-2">
-            <PenLine className="w-5 h-5" />
-            Signature
-          </h2>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={clearSignature}
-            className="text-muted-foreground hover:text-foreground gap-1"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Clear
-          </Button>
+      {/* ── SIGNATURE ── */}
+      <div className={sectionClass}>
+        <h2 className={sectionTitleClass}>
+          <FileText className="w-5 h-5 text-accent-yellow" />
+          Signature
+        </h2>
+        <div className="space-y-4">
+          <div className={fieldGroupClass}>
+            <div className="space-y-2">
+              <Label className={labelClass}>Name</Label>
+              <Input
+                value={form.signatureName}
+                onChange={e => updateField('signatureName', e.target.value)}
+                placeholder="Full name"
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={labelClass}>Title</Label>
+              <Input
+                value={form.signatureTitle}
+                onChange={e => updateField('signatureTitle', e.target.value)}
+                placeholder="Job title"
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className={labelClass}>Signature</Label>
+            <div className="signature-container border border-border rounded-md overflow-hidden">
+              <canvas
+                ref={canvasRef}
+                width={600}
+                height={150}
+                className="w-full cursor-crosshair touch-none"
+                onMouseDown={startDraw}
+                onMouseMove={draw}
+                onMouseUp={endDraw}
+                onMouseLeave={endDraw}
+                onTouchStart={startDraw}
+                onTouchMove={draw}
+                onTouchEnd={endDraw}
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSignature}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Clear Signature
+            </Button>
+          </div>
         </div>
+      </div>
 
-        <div className="signature-container rounded-md overflow-hidden border border-border">
-          <canvas
-            ref={canvasRef}
-            width={532}
-            height={150}
-            className="w-full touch-none cursor-crosshair bg-background"
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            onTouchStart={startDrawing}
-            onTouchMove={draw}
-            onTouchEnd={stopDrawing}
-          />
-        </div>
-        <p className="text-muted-foreground text-xs">Sign above using mouse or touch</p>
-      </section>
-
-      {/* ── GENERATE PDF ────────────────────────────────────────────────── */}
-      <div className="flex justify-end pb-4">
+      {/* ── ACTIONS ── */}
+      <div className="flex flex-wrap gap-3 justify-end">
+        {saveMessage && (
+          <span className="self-center text-sm text-accent-yellow">{saveMessage}</span>
+        )}
         <Button
-          type="button"
+          variant="outline"
+          onClick={resetForm}
+          className="border-border text-muted-foreground hover:text-foreground"
+        >
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reset
+        </Button>
+        <Button
+          variant="outline"
+          onClick={saveToStorage}
+          disabled={isSaving}
+          className="border-accent-yellow/50 text-accent-yellow hover:bg-accent-yellow/10"
+        >
+          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+          Save
+        </Button>
+        <Button
           onClick={handleGeneratePDF}
           disabled={isGenerating}
-          className="btn-primary gap-2 px-8 py-3 text-base font-bold uppercase tracking-wider"
+          className="btn-primary"
         >
-          {isGenerating ? (
-            <>
-              <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <FileText className="w-5 h-5" />
-              Generate PDF Report
-            </>
-          )}
+          {isGenerating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+          Generate PDF
         </Button>
       </div>
     </div>

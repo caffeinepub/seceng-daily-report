@@ -2,9 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-pdf-generator-utility-frontend-src-utils-pdfgenerator-ts-remove-any-yellow-border-or-yellow-colored-rectangle-line-drawn-at-the-top-header-section-of-the-generated-pdf-document",
-      "featureTitle": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), remove any yellow border or yellow-colored rectangle/line drawn at the top header section of the generated PDF document.",
+      "featureId": "feature-remove-the-date-weather-condition-and-temperature-fields-from-the-project-information-section-of-the-reportform-component-these-fields-should-no-longer-be-rendered-editable-or-included-in-form-state",
+      "featureTitle": "Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component. These fields should no longer be rendered, editable, or included in form state.",
       "files": [
+        "frontend/src/components/ReportForm.tsx",
         "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [
@@ -21,9 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-the-pdf-generator-utility-frontend-src-utils-pdfgenerator-ts-increase-the-font-size-for-all-text-rendered-throughout-the-entire-pdf-document-including-headers-field-labels-field-values-section-titles-and-footer-text-so-the-document-is-more-readable",
-      "featureTitle": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), increase the font size for all text rendered throughout the entire PDF document — including headers, field labels, field values, section titles, and footer text — so the document is more readable.",
+      "featureId": "feature-remove-the-punch-in-and-punch-out-fields-for-the-lead-technician-and-assistant-technician-from-the-punch-section-of-the-reportform-component-these-fields-should-no-longer-be-rendered-editable-saved-to-state-or-included-in-localstorage-persistence",
+      "featureTitle": "Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component. These fields should no longer be rendered, editable, saved to state, or included in localStorage persistence.",
       "files": [
+        "frontend/src/components/ReportForm.tsx",
         "frontend/src/utils/pdfGenerator.ts"
       ],
       "components": [

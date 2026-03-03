@@ -1,44 +1,34 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "PDF document generation project with ongoing visual adjustments.",
-  "architectural_notes": [],
+  "summary": "Project involves a work/field management app with punch in/out tracking and project information forms. User is removing Date, Weather Condition, and Temperature fields from Project Information, and removing Punch In/Punch Out fields for Lead Technician and Assistant Technician.",
+  "architectural_notes": [
+    "Date, Weather Condition, and Temperature fields removed from Project Information section",
+    "Punch In and Punch Out fields removed for Lead Technician and Assistant Technician"
+  ],
   "known_issues": [],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-the-pdf-generator-utility-frontend-src-utils-pdfgenerator-ts-remove-any-yellow-border-or-yellow-colored-rectangle-line-drawn-at-the-top-header-section-of-the-generated-pdf-document",
-      "title": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), remove any yellow border or yellow-colored rectangle/line drawn at the top header section of the generated PDF document.",
+      "id": "feature-remove-the-date-weather-condition-and-temperature-fields-from-the-project-information-section-of-the-reportform-component-these-fields-should-no-longer-be-rendered-editable-or-included-in-form-state",
+      "title": "Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component. These fields should no longer be rendered, editable, or included in form state.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-in-the-pdf-generator-utility-frontend-src-utils-pdfgenerator-ts-increase-the-font-size-for-all-text-rendered-throughout-the-entire-pdf-document-including-headers-field-labels-field-values-section-titles-and-footer-text-so-the-document-is-more-readable",
-      "title": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), increase the font size for all text rendered throughout the entire PDF document — including headers, field labels, field values, section titles, and footer text — so the document is more readable.",
+      "id": "feature-remove-the-punch-in-and-punch-out-fields-for-the-lead-technician-and-assistant-technician-from-the-punch-section-of-the-reportform-component-these-fields-should-no-longer-be-rendered-editable-saved-to-state-or-included-in-localstorage-persistence",
+      "title": "Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component. These fields should no longer be rendered, editable, saved to state, or included in localStorage persistence.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Remove yellow borders at the header of PDF",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Increase text size for the entire PDF document",
-      "reqIds": [],
-      "status": "pending"
-    }
-  ],
+  "new_feature_requests": [],
   "gameProjectType": "none",
-  "projectName": "SECENG Daily Report",
+  "projectName": "Field Report Pro",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

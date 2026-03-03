@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-02T23:51:51.647Z",
+  "generatedAt": "2026-03-03T02:09:29.816Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,23 +12,27 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), remove any yellow border or yellow-colored rectangle/line drawn at the top header section of the generated PDF document.",
+        "summary": "Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component. These fields should no longer be rendered, editable, or included in form state.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/components/ReportForm.tsx",
           "frontend/src/utils/pdfGenerator.ts"
         ],
         "matchedFiles": [
+          "frontend/src/components/ReportForm.tsx",
           "frontend/src/utils/pdfGenerator.ts"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), increase the font size for all text rendered throughout the entire PDF document — including headers, field labels, field values, section titles, and footer text — so the document is more readable.",
+        "summary": "Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component. These fields should no longer be rendered, editable, saved to state, or included in localStorage persistence.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/components/ReportForm.tsx",
           "frontend/src/utils/pdfGenerator.ts"
         ],
         "matchedFiles": [
+          "frontend/src/components/ReportForm.tsx",
           "frontend/src/utils/pdfGenerator.ts"
         ]
       }
@@ -39,6 +43,7 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/components/ReportForm.tsx",
     "frontend/src/utils/pdfGenerator.ts",
     "project_state.json",
     "scratch/component-selection.json",

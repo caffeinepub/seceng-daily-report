@@ -1,36 +1,51 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove yellow borders from PDF header and increase PDF text size",
+  "title": "Remove Date/Weather/Temperature from Project Information and Punch In/Out for Lead & Assistant Technicians",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Remove yellow border or yellow-colored rectangle/line from the PDF header section",
+      "summary": "Remove Date, Weather Condition, and Temperature fields from Project Information section",
       "acceptanceCriteria": [
-        "The generated PDF header contains no yellow borders, outlines, or yellow-colored strokes/rectangles.",
-        "The rest of the PDF layout and content remains intact."
+        "The Date field is no longer visible in the Project Information section.",
+        "The Weather Condition field is no longer visible in the Project Information section.",
+        "The Temperature field is no longer visible in the Project Information section.",
+        "Removing these fields does not break form submission, localStorage persistence, or PDF generation.",
+        "If these fields were previously persisted in localStorage, their keys are either ignored or cleaned up gracefully on load."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Remove Date, Weather Condition, and Temperature field declarations from form state, remove their input elements from the Project Information section JSX, and ensure their removal does not affect other form fields or localStorage persistence logic for remaining fields."
+        },
+        {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Remove any yellow-colored drawing commands (setDrawColor, setFillColor with yellow RGB/hex values, rect calls with yellow stroke/fill) that render borders, rectangles, or lines in the header section of the PDF. Locate the header rendering logic and eliminate yellow color specifications while preserving other header elements (text, logo, layout structure)."
+          "description": "Remove references to Date, Weather Condition, and Temperature fields from the PDF generation logic so these fields are no longer included in generated reports."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Increase font size for all text elements throughout the PDF document",
+      "summary": "Remove Punch In and Punch Out fields for Lead Technician and Assistant Technician",
       "acceptanceCriteria": [
-        "All text elements in the generated PDF are rendered at a larger font size than before.",
-        "The relative hierarchy between headings, labels, and body text is preserved.",
-        "No text overflows or is clipped due to the size increase."
+        "Punch In and Punch Out fields for Lead Technician are no longer visible in the form.",
+        "Punch In and Punch Out fields for Assistant Technician are no longer visible in the form.",
+        "Removing these fields does not break the overall form, other punch entries (if any), localStorage persistence, or PDF generation.",
+        "The PDF generator (pdfGenerator.ts) no longer includes Lead Technician or Assistant Technician punch times in the generated report.",
+        "Any previously stored punch data for Lead/Assistant Technician in localStorage is ignored or cleaned up gracefully on load."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/ReportForm.tsx",
+          "operation": "modify",
+          "description": "Remove Punch In and Punch Out state fields for Lead Technician and Assistant Technician from the form state, remove their corresponding date/time picker input elements from the Punch section JSX, and ensure localStorage persistence logic ignores or gracefully handles these removed fields."
+        },
+        {
           "path": "frontend/src/utils/pdfGenerator.ts",
           "operation": "modify",
-          "description": "Increase all setFontSize() calls throughout the PDF generation logic. Apply consistent scaling (e.g., +2 to +4 points) to headers, field labels, field values, section titles, and footer text while maintaining the existing hierarchy (headers larger than body text). Verify text fits within page margins and does not cause line breaks or clipping issues after the increase."
+          "description": "Remove the Lead Technician and Assistant Technician punch time entries from the personnel punch times section of the PDF generation logic so these fields are no longer rendered in generated reports."
         }
       ]
     }

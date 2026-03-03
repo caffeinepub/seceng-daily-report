@@ -1,325 +1,213 @@
-// PDF generation utility using jsPDF (loaded via CDN in index.html)
+// PDF Generation Utility using jsPDF (loaded via CDN in index.html)
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-export interface TechnicianData {
-  name: string;
-  workPunchIn: string;
-  workPunchOut: string;
-  lunchPunchIn: string;
-  lunchPunchOut: string;
-}
-
-export interface AssisTech {
-  name: string;
-  workPunchIn: string;
-  workPunchOut: string;
-  lunchPunchIn: string;
-  lunchPunchOut: string;
-}
+declare const window: Window & { jspdf?: { jsPDF: any } };
 
 export interface ReportData {
-  // Header info
-  date: string;
-  jobName: string;
-  jobNumber: string;
-  location: string;
-  weatherConditions: string;
-  temperature: string;
-
+  // Project Info
+  projectName: string;
+  projectNumber: string;
+  projectAddress: string;
+  // Punch times (top-level / general)
+  punchInDate: string;
+  punchInTime: string;
+  punchOutDate: string;
+  punchOutTime: string;
   // Personnel
-  technicians: TechnicianData[];
-  assisTechs?: AssisTech[];
-
-  // Work details
+  leadTechName: string;
+  assistTechName: string;
+  additionalTechs: Array<{
+    name: string;
+    punchInDate: string;
+    punchInTime: string;
+    punchOutDate: string;
+    punchOutTime: string;
+  }>;
+  // Work Details
   workPerformed: string;
   materialsUsed: string;
   equipmentUsed: string;
-
   // Status
   workStatus: string;
   percentComplete: string;
-
   // Notes
+  safetyNotes: string;
   additionalNotes: string;
-
   // Signature
-  signature?: string;
+  signatureName: string;
+  signatureTitle: string;
+  signatureData: string;
 }
 
-function formatDateTime(dateTimeStr: string): string {
-  if (!dateTimeStr) return 'N/A';
-  try {
-    const date = new Date(dateTimeStr);
-    return date.toLocaleString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-  } catch {
-    return dateTimeStr;
-  }
-}
+export async function generatePDF(data: ReportData): Promise<void> {
+  const jsPDFLib = window.jspdf;
+  if (!jsPDFLib) throw new Error('jsPDF not loaded');
+  const { jsPDF } = jsPDFLib;
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return 'N/A';
-  try {
-    const date = new Date(dateStr + 'T00:00:00');
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getJsPDF(): any {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const w = window as any;
-  if (w.jspdf && w.jspdf.jsPDF) return w.jspdf.jsPDF;
-  if (w.jsPDF) return w.jsPDF;
-  throw new Error('jsPDF not loaded');
-}
-
-export function generatePDF(data: ReportData): void {
-  const jsPDF = getJsPDF();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' }) as any;
-
-  const pageWidth = 612;
-  const pageHeight = 792;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const margin = 40;
-  const contentWidth = pageWidth - margin * 2;
+  const contentW = pageW - margin * 2;
   let y = margin;
 
-  // Colors
-  const darkGray = [30, 30, 30];
-  const medGray = [60, 60, 60];
-  const lightGray = [200, 200, 200];
-  const accentYellow = [245, 197, 24];
-  const white = [255, 255, 255];
-  const offWhite = [245, 245, 245];
-
-  function checkPageBreak(neededHeight: number) {
-    if (y + neededHeight > pageHeight - margin) {
+  // ── helpers ──────────────────────────────────────────────────────────────
+  const checkPage = (needed: number) => {
+    if (y + needed > pageH - margin) {
       doc.addPage();
       y = margin;
     }
-  }
+  };
 
-  function drawSectionHeader(title: string) {
-    checkPageBreak(30);
-    doc.setFillColor(...darkGray);
-    doc.rect(margin, y, contentWidth, 24, 'F');
-    doc.setFillColor(...accentYellow);
-    doc.rect(margin, y, 4, 24, 'F');
+  const sectionHeader = (title: string) => {
+    checkPage(28);
+    doc.setFillColor(30, 30, 30);
+    doc.rect(margin, y, contentW, 22, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(...white);
-    doc.text(title.toUpperCase(), margin + 12, y + 16);
-    y += 30;
-  }
+    doc.setFontSize(10);
+    doc.setTextColor(245, 158, 11); // amber
+    doc.text(title.toUpperCase(), margin + 8, y + 15);
+    y += 28;
+  };
 
-  function drawField(label: string, value: string, x: number, fieldWidth: number) {
-    checkPageBreak(40);
-    doc.setFillColor(...offWhite);
-    doc.rect(x, y, fieldWidth, 36, 'F');
-    doc.setDrawColor(...lightGray);
-    doc.rect(x, y, fieldWidth, 36, 'S');
+  const fieldRow = (label: string, value: string, x = margin, w = contentW) => {
+    checkPage(32);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...medGray);
-    doc.text(label.toUpperCase(), x + 6, y + 13);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.setTextColor(...darkGray);
-    const lines = doc.splitTextToSize(value || 'N/A', fieldWidth - 12);
-    doc.text(lines[0] || 'N/A', x + 6, y + 28);
-    y += 42;
-  }
-
-  function drawTwoFields(
-    label1: string, value1: string,
-    label2: string, value2: string
-  ) {
-    checkPageBreak(40);
-    const halfWidth = (contentWidth - 8) / 2;
-    const x1 = margin;
-    const x2 = margin + halfWidth + 8;
-
-    doc.setFillColor(...offWhite);
-    doc.rect(x1, y, halfWidth, 36, 'F');
-    doc.setDrawColor(...lightGray);
-    doc.rect(x1, y, halfWidth, 36, 'S');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...medGray);
-    doc.text(label1.toUpperCase(), x1 + 6, y + 13);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.setTextColor(...darkGray);
-    doc.text(value1 || 'N/A', x1 + 6, y + 28);
-
-    doc.setFillColor(...offWhite);
-    doc.rect(x2, y, halfWidth, 36, 'F');
-    doc.setDrawColor(...lightGray);
-    doc.rect(x2, y, halfWidth, 36, 'S');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...medGray);
-    doc.text(label2.toUpperCase(), x2 + 6, y + 13);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.setTextColor(...darkGray);
-    doc.text(value2 || 'N/A', x2 + 6, y + 28);
-
-    y += 42;
-  }
-
-  function drawTextArea(label: string, value: string) {
-    const lines = doc.splitTextToSize(value || 'N/A', contentWidth - 12);
-    const boxHeight = Math.max(52, lines.length * 15 + 24);
-    checkPageBreak(boxHeight + 8);
-
-    doc.setFillColor(...offWhite);
-    doc.rect(margin, y, contentWidth, boxHeight, 'F');
-    doc.setDrawColor(...lightGray);
-    doc.rect(margin, y, contentWidth, boxHeight, 'S');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...medGray);
-    doc.text(label.toUpperCase(), margin + 6, y + 13);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.setTextColor(...darkGray);
-    doc.text(lines, margin + 6, y + 28);
-    y += boxHeight + 6;
-  }
-
-  // ── HEADER ──────────────────────────────────────────────────────────────────
-  doc.setFillColor(...darkGray);
-  doc.rect(0, 0, pageWidth, 70, 'F');
-  // No yellow border/bar in the header
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(21);
-  doc.setTextColor(...white);
-  doc.text('SECURITY ENGINEERING INC.', margin, 32);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(13);
-  doc.setTextColor(...accentYellow);
-  doc.text('DAILY FIELD REPORT', margin, 54);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(...lightGray);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin, 54, { align: 'right' });
-
-  y = 90;
-
-  // ── PROJECT INFORMATION ──────────────────────────────────────────────────────
-  drawSectionHeader('Project Information');
-  drawField('Date', formatDate(data.date), margin, contentWidth);
-  drawTwoFields('Job Name', data.jobName, 'Job Number', data.jobNumber);
-  drawTwoFields('Location', data.location, 'Weather Conditions', data.weatherConditions);
-  drawField('Temperature', data.temperature ? `${data.temperature}°F` : 'N/A', margin, contentWidth);
-
-  // ── LEAD TECHNICIANS ────────────────────────────────────────────────────────
-  drawSectionHeader('Lead Technicians — Time & Attendance');
-
-  if (data.technicians && data.technicians.length > 0) {
-    data.technicians.forEach((tech, idx) => {
-      checkPageBreak(130);
-
-      // Sub-header for each technician
-      doc.setFillColor(...medGray);
-      doc.rect(margin, y, contentWidth, 22, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(...accentYellow);
-      doc.text(`Technician ${idx + 1}: ${tech.name || 'Unnamed'}`, margin + 8, y + 15);
-      y += 28;
-
-      drawTwoFields('Work Punch In', formatDateTime(tech.workPunchIn), 'Work Punch Out', formatDateTime(tech.workPunchOut));
-      drawTwoFields('Lunch Punch In', formatDateTime(tech.lunchPunchIn), 'Lunch Punch Out', formatDateTime(tech.lunchPunchOut));
-    });
-  } else {
-    checkPageBreak(40);
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(11);
-    doc.setTextColor(...medGray);
-    doc.text('No technicians recorded.', margin + 6, y + 16);
-    y += 32;
-  }
-
-  // ── ASSISTANT TECHNICIANS ────────────────────────────────────────────────────
-  if (data.assisTechs && data.assisTechs.length > 0) {
-    drawSectionHeader('Assistant Technicians — Time & Attendance');
-
-    data.assisTechs.forEach((tech, idx) => {
-      checkPageBreak(130);
-
-      doc.setFillColor(...medGray);
-      doc.rect(margin, y, contentWidth, 22, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(...accentYellow);
-      doc.text(`ASSIS Tech ${idx + 1}: ${tech.name || 'Unnamed'}`, margin + 8, y + 15);
-      y += 28;
-
-      drawTwoFields('Work Punch In', formatDateTime(tech.workPunchIn), 'Work Punch Out', formatDateTime(tech.workPunchOut));
-      drawTwoFields('Lunch Punch In', formatDateTime(tech.lunchPunchIn), 'Lunch Punch Out', formatDateTime(tech.lunchPunchOut));
-    });
-  }
-
-  // ── WORK DETAILS ────────────────────────────────────────────────────────────
-  drawSectionHeader('Work Details');
-  drawTextArea('Work Performed', data.workPerformed);
-  drawTextArea('Materials Used', data.materialsUsed);
-  drawTextArea('Equipment Used', data.equipmentUsed);
-
-  // ── STATUS ──────────────────────────────────────────────────────────────────
-  drawSectionHeader('Project Status');
-  drawTwoFields('Work Status', data.workStatus, 'Percent Complete', data.percentComplete ? `${data.percentComplete}%` : 'N/A');
-
-  // ── ADDITIONAL NOTES ────────────────────────────────────────────────────────
-  if (data.additionalNotes) {
-    drawSectionHeader('Additional Notes');
-    drawTextArea('Notes', data.additionalNotes);
-  }
-
-  // ── SIGNATURE ───────────────────────────────────────────────────────────────
-  if (data.signature) {
-    drawSectionHeader('Signature');
-    checkPageBreak(100);
-    try {
-      doc.addImage(data.signature, 'PNG', margin, y, 200, 80);
-      y += 90;
-    } catch {
-      // skip if signature image fails
-    }
-  }
-
-  // ── FOOTER ──────────────────────────────────────────────────────────────────
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFillColor(...darkGray);
-    doc.rect(0, pageHeight - 30, pageWidth, 30, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text(label.toUpperCase(), x, y);
+    y += 12;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.setTextColor(...lightGray);
-    doc.text('Security Engineering Inc. — Confidential Field Report', margin, pageHeight - 10);
-    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+    doc.setTextColor(30, 30, 30);
+    const lines = doc.splitTextToSize(value || '—', w);
+    doc.text(lines, x, y);
+    y += lines.length * 14 + 6;
+  };
+
+  const twoCol = (
+    label1: string, val1: string,
+    label2: string, val2: string
+  ) => {
+    const half = (contentW - 12) / 2;
+    const startY = y;
+    fieldRow(label1, val1, margin, half);
+    const leftEndY = y;
+    y = startY;
+    fieldRow(label2, val2, margin + half + 12, half);
+    y = Math.max(leftEndY, y);
+  };
+
+  // ── HEADER ───────────────────────────────────────────────────────────────
+  doc.setFillColor(15, 15, 15);
+  doc.rect(0, 0, pageW, 70, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(245, 158, 11);
+  doc.text('SECURITY ENGINEERING INC.', margin, 32);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(200, 200, 200);
+  doc.text('Daily Field Report', margin, 52);
+  const generatedStr = `Generated: ${new Date().toLocaleString()}`;
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.text(generatedStr, pageW - margin - doc.getTextWidth(generatedStr), 52);
+  y = 90;
+
+  // ── PUNCH SECTION ────────────────────────────────────────────────────────
+  sectionHeader('Punch');
+  const punchIn = `${data.punchInDate || '—'} ${data.punchInTime || ''}`.trim();
+  const punchOut = `${data.punchOutDate || '—'} ${data.punchOutTime || ''}`.trim();
+  twoCol('Punch In', punchIn, 'Punch Out', punchOut);
+  y += 8;
+
+  // ── PROJECT INFORMATION ──────────────────────────────────────────────────
+  sectionHeader('Project Information');
+  twoCol('Project Name', data.projectName, 'Project Number', data.projectNumber);
+  fieldRow('Project Address', data.projectAddress);
+  y += 8;
+
+  // ── PERSONNEL ────────────────────────────────────────────────────────────
+  sectionHeader('Personnel');
+
+  // Lead Tech
+  checkPage(20);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(245, 158, 11);
+  doc.text('LEAD TECHNICIAN', margin, y);
+  y += 14;
+  fieldRow('Name', data.leadTechName);
+  y += 6;
+
+  // Assist Tech
+  checkPage(20);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(245, 158, 11);
+  doc.text('ASSISTANT TECHNICIAN', margin, y);
+  y += 14;
+  fieldRow('Name', data.assistTechName);
+  y += 6;
+
+  // Additional Techs
+  if (data.additionalTechs && data.additionalTechs.length > 0) {
+    data.additionalTechs.forEach((tech, i) => {
+      checkPage(20);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(245, 158, 11);
+      doc.text(`TECHNICIAN ${i + 1}`, margin, y);
+      y += 14;
+      fieldRow('Name', tech.name);
+      const techIn = `${tech.punchInDate || '—'} ${tech.punchInTime || ''}`.trim();
+      const techOut = `${tech.punchOutDate || '—'} ${tech.punchOutTime || ''}`.trim();
+      twoCol('Punch In', techIn, 'Punch Out', techOut);
+      y += 6;
+    });
+  }
+  y += 8;
+
+  // ── WORK DETAILS ─────────────────────────────────────────────────────────
+  sectionHeader('Work Details');
+  fieldRow('Work Performed', data.workPerformed);
+  twoCol('Materials Used', data.materialsUsed, 'Equipment Used', data.equipmentUsed);
+  y += 8;
+
+  // ── STATUS ───────────────────────────────────────────────────────────────
+  sectionHeader('Status');
+  twoCol('Work Status', data.workStatus, 'Percent Complete', data.percentComplete);
+  y += 8;
+
+  // ── NOTES ────────────────────────────────────────────────────────────────
+  sectionHeader('Notes');
+  fieldRow('Safety Notes', data.safetyNotes);
+  fieldRow('Additional Notes', data.additionalNotes);
+  y += 8;
+
+  // ── SIGNATURE ────────────────────────────────────────────────────────────
+  sectionHeader('Signature');
+  twoCol('Name', data.signatureName, 'Title', data.signatureTitle);
+  if (data.signatureData && data.signatureData !== 'data:,') {
+    checkPage(100);
+    doc.addImage(data.signatureData, 'PNG', margin, y, 200, 60);
+    y += 70;
   }
 
-  // Save
-  const fileName = `field-report-${data.jobNumber || 'draft'}-${data.date || 'undated'}.pdf`;
-  doc.save(fileName);
+  // ── FOOTER ───────────────────────────────────────────────────────────────
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(15, 15, 15);
+    doc.rect(0, pageH - 30, pageW, 30, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text('Security Engineering Inc. — Daily Field Report', margin, pageH - 12);
+    doc.text(`Page ${p} of ${totalPages}`, pageW - margin - 50, pageH - 12);
+  }
+
+  const reportDate = data.punchInDate || new Date().toISOString().split('T')[0];
+  doc.save(`field-report-${reportDate}.pdf`);
 }

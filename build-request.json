@@ -1,53 +1,60 @@
 {
   "kind": "build_request",
-  "title": "Remove yellow borders from PDF header and increase PDF text size",
-  "projectName": "SECENG Daily Report",
+  "title": "Remove Date/Weather/Temperature from Project Information and Punch In/Out for Lead & Assistant Technicians",
+  "projectName": "Field Report Pro",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), remove any yellow border or yellow-colored rectangle/line drawn at the top header section of the generated PDF document.",
+      "text": "Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component. These fields should no longer be rendered, editable, or included in form state.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Remove yellow borders at the header of pdf."
+          "Remove Date, Weather conditon and temparature from Project Informaion."
         ]
       },
       "acceptanceCriteria": [
-        "The generated PDF header contains no yellow borders, outlines, or yellow-colored strokes/rectangles.",
-        "The rest of the PDF layout and content remains intact."
+        "The Date field is no longer visible in the Project Information section.",
+        "The Weather Condition field is no longer visible in the Project Information section.",
+        "The Temperature field is no longer visible in the Project Information section.",
+        "Removing these fields does not break form submission, localStorage persistence, or PDF generation.",
+        "If these fields were previously persisted in localStorage, their keys are either ignored or cleaned up gracefully on load."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "In the PDF generator utility (frontend/src/utils/pdfGenerator.ts), increase the font size for all text rendered throughout the entire PDF document — including headers, field labels, field values, section titles, and footer text — so the document is more readable.",
+      "text": "Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component. These fields should no longer be rendered, editable, saved to state, or included in localStorage persistence.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Increase size of text for the entire pdf document"
+          "Remove Punch in, Punch out for Lead Technician and ASSIS Technician"
         ]
       },
       "acceptanceCriteria": [
-        "All text elements in the generated PDF are rendered at a larger font size than before.",
-        "The relative hierarchy between headings, labels, and body text is preserved.",
-        "No text overflows or is clipped due to the size increase."
+        "Punch In and Punch Out fields for Lead Technician are no longer visible in the form.",
+        "Punch In and Punch Out fields for Assistant Technician are no longer visible in the form.",
+        "Removing these fields does not break the overall form, other punch entries (if any), localStorage persistence, or PDF generation.",
+        "The PDF generator (pdfGenerator.ts) no longer includes Lead Technician or Assistant Technician punch times in the generated report.",
+        "Any previously stored punch data for Lead/Assistant Technician in localStorage is ignored or cleaned up gracefully on load."
       ]
     }
   ],
   "constraints": [
-    "Only modify frontend/src/utils/pdfGenerator.ts for these changes.",
-    "Do not alter any other PDF structure, data fields, or layout logic beyond what is required."
+    "Do not modify any files under frontend/src/hooks/ or frontend/src/components/ui.",
+    "Preserve all other form fields and sections that are not explicitly listed for removal.",
+    "Maintain existing localStorage persistence logic for all remaining fields."
   ],
   "nonGoals": [
-    "Changing colors or styles elsewhere in the app UI.",
-    "Adding or removing any data fields from the PDF.",
-    "Modifying the backend."
+    "Adding any new fields or sections to the form.",
+    "Changing the visual theme or layout of the app beyond removing the specified fields.",
+    "Modifying backend logic (backend/main.mo remains unchanged).",
+    "Removing Punch In/Out for any personnel other than Lead Technician and Assistant Technician."
   ],
   "imageRequirements": {
     "required": [],

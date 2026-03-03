@@ -1,17 +1,17 @@
 {
   "backend/main.mo": "Empty Motoko actor serving as the backend entry point with no implemented methods.",
-  "feature_evidence.json": "Feature evidence report documenting two implemented changes to pdfGenerator.ts: removing the yellow header border and increasing font sizes throughout the PDF.",
+  "feature_evidence.json": "Feature evidence report documenting two completed features: removal of Date/Weather/Temperature fields and removal of Punch In/Out fields from the ReportForm component, with associated file and test references.",
   "frontend-file-summaries.txt": "JSON-formatted summaries of all frontend source files describing their purpose and key implementation details.",
   "frontend/index.css": "Minimal Tailwind base CSS file defining light and dark OKLCH color tokens for shadcn-style design system variables.",
   "frontend/index.html": "HTML entry point loading Inter and Oswald fonts from Google Fonts and jsPDF 2.5.1 via CDN for client-side PDF generation.",
-  "frontend/src/App.tsx": "Root app component rendering a sticky header with company branding, a hero banner with feature icons, the ReportForm, and a footer with caffeine.ai attribution.",
-  "frontend/src/components/ReportForm.tsx": "Daily field report form managing project info, multiple lead and assistant technicians, work details, project status, a signature canvas, and PDF generation via pdfGenerator.",
+  "frontend/src/App.tsx": "Root app component rendering a sticky industrial-themed header, hero banner with feature icons, the ReportForm, and a footer with caffeine.ai attribution.",
+  "frontend/src/components/ReportForm.tsx": "Daily field report form managing project info, personnel names, punch times, work details, status, notes, and signature with localStorage persistence and PDF export; Date/Weather/Temperature and Lead/Assistant punch time fields have been removed.",
   "frontend/src/hooks/useActor.ts": "React hook that creates and caches an ICP backend actor using the current Internet Identity, invalidating dependent queries when the actor changes.",
-  "frontend/src/hooks/useInternetIdentity.ts": "React context provider and hook wrapping DFINITY AuthClient to manage Internet Identity login, logout, and identity persistence across page reloads.",
+  "frontend/src/hooks/useInternetIdentity.ts": "React context provider and hook for Internet Identity authentication, exposing login/logout functions, identity state, and login status.",
   "frontend/src/hooks/useQueries.ts": "Placeholder module confirming no backend queries are needed since the app is fully client-side.",
-  "frontend/src/index.css": "Global styles defining a dark industrial OKLCH color system with safety yellow/orange accents, dark gray button component classes, and dark color-scheme for date inputs.",
-  "frontend/src/main.tsx": "React app entry point wrapping App with QueryClientProvider and InternetIdentityProvider before mounting to the DOM.",
-  "frontend/src/utils/pdfGenerator.ts": "Utility that generates a formatted daily report PDF using jsPDF (loaded via CDN), defining data interfaces and helper functions for rendering sections, fields, headers, and signatures onto a letter-sized document.",
-  "frontend/tailwind.config.js": "Tailwind CSS configuration extending the default theme with CSS variable-based colors, custom fonts, border radii, box shadows, keyframe animations, and enabling the animate, typography, and container-queries plugins.",
-  "project_state.json": "Project state tracking file recording existing completed features and pending fix requests, specifically around removing yellow borders and increasing font sizes in the PDF generator utility."
+  "frontend/src/index.css": "Global styles defining a dark industrial OKLCH color system with safety yellow/orange accents, dark gray button component classes, and dark color-scheme for date/time inputs.",
+  "frontend/src/main.tsx": "React app entry point wrapping the App component with QueryClientProvider and InternetIdentityProvider before mounting to the DOM.",
+  "frontend/src/utils/pdfGenerator.ts": "Defines a `ReportData` interface and `generatePDF` function that uses jsPDF (loaded via CDN) to produce a formatted letter-sized PDF daily field report with sections for punch times, project info, personnel, work details, and signatures.",
+  "frontend/tailwind.config.js": "Tailwind CSS configuration extending the default theme with CSS-variable-based colors, custom fonts (Inter, Oswald, JetBrains Mono), border radii, glow box shadows, and keyframe animations, plus the animate, typography, and container-queries plugins.",
+  "project_state.json": "Tracks the current state of the Field Report Pro project, recording two completed features: removing Date/Weather/Temperature fields from Project Information and removing per-technician Punch In/Out fields from the Punch section of the ReportForm component."
 }

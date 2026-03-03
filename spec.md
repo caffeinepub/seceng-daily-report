@@ -1,10 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the PDF generator to remove yellow borders from the header and increase text size throughout the document.
+**Goal:** Remove specific fields from the Project Information and Punch sections of the Field Report Pro form.
 
 **Planned changes:**
-- Remove any yellow border, outline, or yellow-colored rectangle/line drawn in the PDF header section
-- Increase font sizes for all text elements in the PDF (headers, field labels, field values, section titles, footer) while preserving the relative text hierarchy
+- Remove the Date, Weather Condition, and Temperature fields from the Project Information section of the ReportForm component
+- Remove the Punch In and Punch Out fields for the Lead Technician and Assistant Technician from the Punch section of the ReportForm component
+- Ensure the PDF generator no longer includes Lead/Assistant Technician punch times in generated reports
+- Gracefully handle any previously persisted localStorage data for the removed fields
 
-**User-visible outcome:** Generated PDFs will have a clean header without yellow borders, and all text will be larger and more readable.
+**User-visible outcome:** The form no longer displays Date, Weather Condition, or Temperature in the Project Information section, and no longer displays Punch In/Out fields for Lead and Assistant Technicians. All other form functionality, persistence, and PDF generation remain intact.
